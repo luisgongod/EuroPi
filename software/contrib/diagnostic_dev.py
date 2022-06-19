@@ -1,5 +1,6 @@
 """
 Modified from diagnotic.py to be used with the europi_dev board.
+Use with original in lib/europi.py
 
 """
 
@@ -80,10 +81,13 @@ class MuxKnob():
 def main():
 
     m0 = Mux(26,7,8,9)
+    #Knob channels (left to right) 3,2,1,0
     mk1 = MuxKnob(m0,3)
     mk2 = MuxKnob(m0,2)
     mk3 = MuxKnob(m0,1)
     mk4 = MuxKnob(m0,0)
+    
+    #AnalogIn channels (left to right) 5,7,4,6
     ma1 = MuxAnalogueInput(m0,5)
     ma2 = MuxAnalogueInput(m0,7)
     ma3 = MuxAnalogueInput(m0,4)
