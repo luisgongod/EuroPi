@@ -5,7 +5,6 @@ Modified from: europy.py To work with Europi_dev board-module.
 Adding classes to be used with multiplexer and extra components.
 
 Roadmap:
-    - Add support for multiplexers
     - Support for calibration of multiplexers: calibratrion_dev.py to generate calibration_values_dev.py
     
 e.g.
@@ -77,7 +76,6 @@ HIGH = 1
 
 # Helper functions.
 
-
 def clamp(value, low, high):
     """Returns a value that is no lower than 'low' and no higher than 'high'."""
     return max(min(value, high), low)
@@ -88,7 +86,7 @@ def reset_state():
     if not TEST_ENV:
         oled.fill(0)
     [cv.off() for cv in cvs]
-    [d.reset_handler() for d in (b1, b2, din)]
+    [d.reset_handler() for d in (b1, b2, din1,din2)]
 
 
 # Component classes.
@@ -536,8 +534,7 @@ class Mux():
     def set_channel(self, channel):
         self.address_A_pin.value(channel & 0b00000001)
         self.address_B_pin.value(channel & 0b00000010)
-        self.address_C_pin.value(channel & 0b00000100)
-
+        self.address_C_pin.value(channel & 0b00000100)    
 
 
 class MuxAnalogueInput():
@@ -579,8 +576,6 @@ class MuxKnob():
         self.mux.set_channel(self.channel)        
         return self.knob.read_position()
 
-
-
 # Define all the I/O using the appropriate class and with the pins used
 
 m0 = Mux(26,7,8,9)
@@ -591,27 +586,31 @@ mk2 = MuxKnob(m0,2)
 mk3 = MuxKnob(m0,1)
 mk4 = MuxKnob(m0,0)
 
-#AnalogIn channels (left to right) 5,7,4,6
+#AnalogIn channels (left to right) 5,7,4,6 
+#TODO: Invert in HW!
 ma1 = MuxAnalogueInput(m0,5)
 ma2 = MuxAnalogueInput(m0,7)
 ma3 = MuxAnalogueInput(m0,4)
 ma4 = MuxAnalogueInput(m0,6)
 
-din2 = DigitalInput(6)
-din = DigitalInput(22)
+din1 = DigitalInput(6)
+din2 = DigitalInput(22)
 
 k1 = Knob(27)
 k2 = Knob(28)
-b1 = Button(4)
-b2 = Button(5)
+b1 = Button(5)
+b2 = Button(4)
+
 
 oled = Display(2,3 )
-cv1 = Output(21)
-cv2 = Output(20)
-cv3 = Output(16)
-cv4 = Output(17)
-cv5 = Output(18)
-cv6 = Output(19)
+
+#TODO: Invert in HW!
+cv6 = Output(21)
+cv5 = Output(20)
+cv4 = Output(16)
+cv3 = Output(17)
+cv2 = Output(18)
+cv1 = Output(19)
 cvs = [cv1, cv2, cv3, cv4, cv5, cv6]
 
 # Reset the module state upon import.
