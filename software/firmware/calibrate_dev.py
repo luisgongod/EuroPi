@@ -97,8 +97,7 @@ class Calibrate(EuroPiScript):
         # Creates empty file
         open(CALIBRATION_FILE, 'w').close()
 
-        #Calibaratrion ch 5 and 7 (0-10V) for 1st and 2nd input
-        mux_channels = [5, 7]
+        readings = calib_input_channel(ma1.channel, chosen_process, "INPUT_CALIBRATION_VALUES",0, 10) # temp_readings to be use in output calibration
 
         for ch in mux_channels:
             calib_input_channel(ch)
