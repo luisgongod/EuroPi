@@ -1,11 +1,16 @@
 from machine import Pin, ADC, PWM, freq
 from time import sleep
-from europi_dev import oled, b1, b2, m0
+from europi_dev import oled, b1, b2, m0, ma1,ma2, ma3, ma4
 from europi_script import EuroPiScript
 
 CALIBRATION_FILE = "lib/calibration_values_dev.py"
+SAMPLE_SIZE = 256
+HIGH = 1
+LOW = 0
 
-class Calibrate(EuroPiScript):
+HIGH_RES = 2
+LOW_RES = 1
+class Calibrate_dev(EuroPiScript):
     @classmethod
     def display_name(cls):
         """Push this script to the end of the menu."""
@@ -20,24 +25,26 @@ class Calibrate(EuroPiScript):
         cv1 = PWM(Pin(21))
         usb = Pin(24, Pin.IN)
 
-        #AnalogIn channels (left to right) 5,7,4,6
-
-        m0.set_channel(5)
-
         def sample():
             readings = []
-            for reading in range(256):
+            for reading in range(SAMPLE_SIZE):
                 readings.append(ain.read_u16())
-            return round(sum(readings) / 256)
+                
+                #Progress bar
+                if reading % (SAMPLE_SIZE / 10) == 0:
+                    oled.rect(0, 60, int((reading * oled.width)/SAMPLE_SIZE), 64, 1) 
+                    oled.show()
+
+            return round(sum(readings) / SAMPLE_SIZE)
 
         def wait_for_voltage(voltage):
-            wait_for_b1(0)
+            wait_for_b1(LOW)
             if voltage != 0:
                 oled.centre_text(f"Plug in {voltage}V\n\nDone: Button 1")
-                wait_for_b1(1)
+                wait_for_b1(HIGH)
             else:
                 oled.centre_text(f"Unplug all\n\nDone: Button 1")
-                wait_for_b1(1)
+                wait_for_b1(HIGH)
             oled.centre_text("Calibrating...")
             sleep(1.5)
             return sample()
@@ -61,53 +68,91 @@ class Calibrate(EuroPiScript):
             while b1.value() != value:
                 sleep(0.05)
 
-        def calib_input_channel(channel, chosen_process):
+        def calib_input_channel(channel, chosen_process , name_set , min_voltage=0, max_voltage=10):
             # Input calibration
+            # assuming resolution readings of 1V
+
+            m0.set_channel(channel)
 
             readings = []
-            if chosen_process == 1:
-                readings.append(wait_for_voltage(0))
-                readings.append(wait_for_voltage(10))
-            else:
-                for voltage in range(11):
-                    readings.append(wait_for_voltage(voltage))
+            voltage_range = max_voltage - min_voltage + 1
+            if chosen_process == LOW_RES:
+                readings.append(wait_for_voltage(min_voltage))
+                readings.append(wait_for_voltage(max_voltage))            
+
+            #TODO: apply low res algorithm to fill in between values
+
+            
+            else:                
+                for voltage in range( voltage_range ):
+                    readings.append(wait_for_voltage(voltage-min_voltage))
 
             with open(CALIBRATION_FILE, "a+ ") as file:
                 values = ", ".join(map(str, readings))
-                file.write(f"INPUT_CALIBRATION_VALUES=[{values}]")
+                file.write(f"{name_set}=[{values}]\n")
+            
+            return readings
 
         # Calibration start
 
-        if usb.value() == 1:
+        if usb.value() == HIGH:
             oled.centre_text("Make sure rack\npower is on\nDone: Button 1")
-            wait_for_b1(1)
-            wait_for_b1(0)
+            wait_for_b1(HIGH)
+            wait_for_b1(LOW)
 
         text_wait("Calibration\nMode", 3)
 
-        oled.centre_text("Choose Process\n\n1         2")
+        oled.centre_text("Choose Process\n\n1:H      2:L\n")
+        
         while True:
-            if b1.value() == 1:
-                chosen_process = 1
+            if b1.value() == HIGH:
+                chosen_process = HIGH_RES
                 break
-            elif b2.value() == 1:
-                chosen_process = 2
+            elif b2.value() == HIGH:
+                chosen_process = LOW_RES
                 break
         
-        # Creates empty file
+        # # Creates empty file
         open(CALIBRATION_FILE, 'w').close()
 
-        readings = calib_input_channel(ma1.channel, chosen_process, "INPUT_CALIBRATION_VALUES",0, 10) # temp_readings to be use in output calibration
+        # Calibaratrion ch 5 and 7 (0-10V) for 1st and 2nd input
+        # AnalogIn channels (left to right) 5,7,4,6
+        # ain 1 and 2 have unipoar 0 to 10V range
+        # ain 3 and 4 have bipolar -8 to 8V range    
+         
+        oled.centre_text("Calibrate\n Input 1\nready: Button 1")
+        wait_for_b1(HIGH)
+        wait_for_b1(LOW)    
 
-        for ch in mux_channels:
-            calib_input_channel(ch)
+        #TODO: INPUT_CALIBRATION_VALUES name expected in europi_dev.py, change to INPUT_CALIBRATION_VALUES_DEFAULT?
+
+        readings = calib_input_channel(ma1.channel, chosen_process, "INPUT_CALIBRATION_VALUES",0, 10) # temp_readings to be use in output calibration
+        oled.centre_text("Calibrate\n Input 2\nready: Button 1")
+        wait_for_b1(HIGH)
+        wait_for_b1(LOW)    
+        calib_input_channel(ma2.channel, chosen_process, "INPUT_CALIBRATION_VALUES_2",0, 10)
+        oled.centre_text("Calibrate\n Input 3\nready: Button 1")
+        wait_for_b1(HIGH)
+        wait_for_b1(LOW)    
+        # calib_input_channel(4, chosen_process, "INPUT_CALIBRATION_VALUES_3",-8, 8)
+        # oled.centre_text("Calibrate\n Input 4\nready: Button 1")
+        # wait_for_b1(HIGH)
+        # wait_for_b1(LOW)    
+        # calib_input_channel(6, chosen_process, "INPUT_CALIBRATION_VALUES_4",-8, 8)
+
 
         # Output Calibration
+        #change to 1st input channel
+        m0.set_channel(5)
         oled.centre_text(f"Plug CV1 into\nanalogue in\nDone: Button 1")
-        wait_for_b1(1)
+        wait_for_b1(HIGH)
         oled.centre_text("Calibrating...")
 
-        if chosen_process == 1:
+
+
+        # HERE: Output calibratrion gives zeros
+        #if LOW_RES, a set of 10 readings are calculated as 1/10th of the range
+        if chosen_process == LOW_RES:
             new_readings = [readings[0]]
             m = (readings[1] - readings[0]) / 10
             c = readings[0]
@@ -115,15 +160,14 @@ class Calibrate(EuroPiScript):
                 new_readings.append(round((m * x) + c))
             new_readings.append(readings[1])
             readings = new_readings
+        
 
         output_duties = [0]
         duty = 0
         cv1.duty_u16(duty)
         reading = sample()
 
-        
-
-
+        #TODO: Calibratron for all outputs        
 
         for index, expected_reading in enumerate(readings[1:]):
             while abs(reading - expected_reading) > 0.002 and reading < expected_reading:
@@ -141,5 +185,4 @@ class Calibrate(EuroPiScript):
 
 
 if __name__ == "__main__":
-    Calibrate().main()
-
+    Calibrate_dev().main()
