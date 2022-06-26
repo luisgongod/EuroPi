@@ -29,11 +29,19 @@ else:
 
 # Note: default Input calibration values for Europi_dev board. 
 # INPUT values stored in calibration_values_dev.py need to be assigned manually (for now)
-INPUT_CALIBRATION_VALUES = [384, 44634]
 
     #Output calibration values for Europi_dev board should be calculated the same way as calibration.py for Europi board
+
 try:
-    from calibration_values_dev.py import OUTPUT_CALIBRATION_VALUES
+    from calibration_values_dev import INPUT_CALIBRATION_VALUES, INPUT_CALIBRATION_VALUES_2, INPUT_CALIBRATION_VALUES_3, INPUT_CALIBRATION_VALUES_4
+except ImportError:
+    INPUT_CALIBRATION_VALUES=[13, 6526, 13038, 19551, 26063, 32576, 39089, 45601, 52114, 58626, 65139]
+    INPUT_CALIBRATION_VALUES_2= INPUT_CALIBRATION_VALUES
+    INPUT_CALIBRATION_VALUES_3= INPUT_CALIBRATION_VALUES
+    INPUT_CALIBRATION_VALUES_4= INPUT_CALIBRATION_VALUES
+
+try:
+    from calibration_values_dev import OUTPUT_CALIBRATION_VALUES    
 except ImportError:
     OUTPUT_CALIBRATION_VALUES = [
         0,
@@ -88,10 +96,7 @@ def reset_state():
     [cv.off() for cv in cvs]
     [d.reset_handler() for d in (b1, b2, din1,din2)]
 
-
 # Component classes.
-
-
 class AnalogueReader:
     """A base class for common analogue read methods.
 
@@ -108,7 +113,7 @@ class AnalogueReader:
         values = []
         for _ in range(samples or self._samples):
             values.append(self.pin.read_u16())
-        return round(sum(values) / len(values))
+        return (0xffff - round(sum(values) / len(values)))
 
     def set_samples(self, samples):
         """Override the default number of sample reads with the given value."""
@@ -180,12 +185,12 @@ class AnalogueInput(AnalogueReader):
     def percent(self, samples=None):
         """Current voltage as a relative percentage of the component's range."""
         # Determine the percent value from the max calibration value.
-        reading = self._sample_adc(samples)
+        reading = 0xffff - self._sample_adc(samples)
         max_value = max(reading, self._calibration_values[-1])
         return reading / max_value
 
     def read_voltage(self, samples=None):
-        reading = self._sample_adc(samples)
+        reading = 0xffff - self._sample_adc(samples)
         max_value = max(reading, self._calibration_values[-1])
         percent = reading / max_value
         # low precision vs. high precision
@@ -237,7 +242,7 @@ class Knob(AnalogueReader):
     def percent(self, samples=None):
         """Return the knob's position as relative percentage."""
         # Reverse range to provide increasing range.
-        return 1 - (self._sample_adc(samples) / MAX_UINT16)
+        return (self._sample_adc(samples) / MAX_UINT16)
 
     def read_position(self, steps=100, samples=None):
         """Returns the position as a value between zero and provided integer."""
@@ -543,19 +548,18 @@ class MuxAnalogueInput():
     the methods are the same as the original class, but change of channel of the Mux is done before calling each method    
     The calibration_values should be assigned in the same order as the channels of the mux
     """    
-
-    def __init__(self, mux,channel,calibration_values=INPUT_CALIBRATION_VALUES):
-        self.analogueInput = AnalogueInput(mux.pin, calibration_values)
+    def __init__(self, mux,channel,calibration_values, min_voltage, max_voltage):
         self.mux = mux
-        self.channel = channel
+        self.channel = channel        
+        self.__analogue_input = AnalogueInput(mux.pin, calibration_values, min_voltage, max_voltage)
 
     def percent(self):
         self.mux.set_channel(self.channel)        
-        return self.analogueInput.percent()
+        return self.__analogue_input.percent()
 
     def read_voltage(self):
         self.mux.set_channel(self.channel)        
-        return self.analogueInput.read_voltage()
+        return self.__analogue_input.read_voltage()
 
 class MuxKnob():
     """
@@ -564,17 +568,17 @@ class MuxKnob():
     """
 
     def __init__(self, mux, channel):
-        self.knob = Knob(mux.pin)
+        self.__knob = Knob(mux.pin)
         self.mux = mux
         self.channel = channel
 
     def percent(self):
         self.mux.set_channel(self.channel)        
-        return self.knob.percent()
+        return self.__knob.percent()
 
     def read_position(self):
         self.mux.set_channel(self.channel)        
-        return self.knob.read_position()
+        return self.__knob.read_position()
 
 # Define all the I/O using the appropriate class and with the pins used
 
@@ -585,22 +589,25 @@ mk1 = MuxKnob(m0,3)
 mk2 = MuxKnob(m0,2)
 mk3 = MuxKnob(m0,1)
 mk4 = MuxKnob(m0,0)
+mks = [mk1,mk2,mk3,mk4]
 
 #AnalogIn channels (left to right) 5,7,4,6 
 #TODO: Invert in HW!
-ma1 = MuxAnalogueInput(m0,5)
-ma2 = MuxAnalogueInput(m0,7)
-ma3 = MuxAnalogueInput(m0,4)
-ma4 = MuxAnalogueInput(m0,6)
+ma1 = MuxAnalogueInput(m0,5,INPUT_CALIBRATION_VALUES, 0,10)
+ma2 = MuxAnalogueInput(m0,7,INPUT_CALIBRATION_VALUES_2, 0,10)
+ma3 = MuxAnalogueInput(m0,4,INPUT_CALIBRATION_VALUES_3, -8,8)
+ma4 = MuxAnalogueInput(m0,6,INPUT_CALIBRATION_VALUES_4, -8,8)
+mas = [ma1,ma2,ma3,ma4]
 
+#TODO: inverted in HW
 din1 = DigitalInput(6)
 din2 = DigitalInput(22)
 
-k1 = Knob(27)
-k2 = Knob(28)
+k1 = Knob(28)
+k2 = Knob(27)
+
 b1 = Button(5)
 b2 = Button(4)
-
 
 oled = Display(2,3 )
 
