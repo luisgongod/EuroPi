@@ -16,6 +16,7 @@ class I2C:
 
 class Pin:
     IN = "in"
+    OUT = "out"
 
     def __init__(self, id, *args):
         pass
@@ -25,6 +26,7 @@ class Pin:
 
     def value(self, *args):
         pass
+
 
 
 class PWM:

@@ -1,16 +1,16 @@
 from machine import Pin, ADC, PWM, freq
 from time import sleep
-from europi_dev import oled, b1, b2, m0, ma1,ma2, ma3, ma4
+from europi_m import oled, b1, b2, m0, ma1,ma2, ma3, ma4
 from europi_script import EuroPiScript
 
-CALIBRATION_FILE = "lib/calibration_values_dev.py"
+CALIBRATION_FILE = "lib/calibration_values_m.py"
 SAMPLE_SIZE = 256
 HIGH = 1
 LOW = 0
 
 HIGH_RES = 2
 LOW_RES = 1
-class Calibrate_dev(EuroPiScript):
+class Calibrate_m(EuroPiScript):
     @classmethod
     def display_name(cls):
         """Push this script to the end of the menu."""
@@ -185,6 +185,6 @@ class Calibrate_dev(EuroPiScript):
 
 
 if __name__ == "__main__":
-    Calibrate_dev().main()
+    Calibrate_m().main()
 
 
