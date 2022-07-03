@@ -532,6 +532,7 @@ class Mux():
     
     # Set address (0-8) from pin (A-C),
     def set_channel(self, channel):
+        # self.address_A_pin.value(channel & 0b00000001)
         self.address_A_pin.value(channel & 0b00000001)
         self.address_B_pin.value(channel & 0b00000010)
         self.address_C_pin.value(channel & 0b00000100)    
