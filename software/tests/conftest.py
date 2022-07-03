@@ -8,7 +8,8 @@ sys.path.append(str(Path(__file__).parent.parent))  # contrib
 sys.path.append(str(Path(__file__).parent.parent / "tests" / "mocks"))
 
 
-from mock_hardware import MockHardware
+# from mock_hardware import MockHardware
+from mock_hardware_m import MockHardware
 
 
 @pytest.fixture

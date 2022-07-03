@@ -24,7 +24,7 @@ class Pin:
     def irq(self, handler=None, trigger=None):
         pass
 
-    def value(self, *args):
+    def value(self, value):
         pass
 
 

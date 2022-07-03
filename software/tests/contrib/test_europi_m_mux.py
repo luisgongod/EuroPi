@@ -1,16 +1,28 @@
+from distutils.util import change_root
 import pytest
 
-from contrib.europi_m import k1, k2, MAX_UINT16
+from contrib.europi_m import k1, k2, MAX_UINT16, mk1
 
-from mock_hardware import MockHardware
+from mock_hardware_m import MockHardware
 
 
-# @pytest.mark.parametrize(
-#     "value, expected",
-#     [
-#         ()
-#     ]
-# )
+@pytest.mark.parametrize(
+    "value, expected",
+    [
+        (0, 1.0000),
+        (MAX_UINT16 / 4, 0.7500),
+        (MAX_UINT16 / 3, 0.6667),
+        (MAX_UINT16 / 2, 0.5000),
+        (MAX_UINT16, 0.0000),
+
+    ]
+)
+def test_Muxknob_percent(mockHardware: MockHardware, value, expected):
+    mockHardware.set_ADC_u16_value(mk1._knob, value)
+
+    # assert round(mk1.percent(), 4) == expected
+    assert round(mk1._knob.percent(), 4) == expected
+
 
 @pytest.mark.parametrize(
     "value, expected",
