@@ -544,17 +544,17 @@ class MuxAnalogueInput():
     The calibration_values should be assigned in the same order as the channels of the mux
     """    
     def __init__(self, mux,channel,calibration_values, min_voltage, max_voltage):
+        self._analogue_input = AnalogueInput(mux.pin, calibration_values, min_voltage, max_voltage)
         self.mux = mux
         self.channel = channel        
-        self.__analogue_input = AnalogueInput(mux.pin, calibration_values, min_voltage, max_voltage)
 
     def percent(self):
         self.mux.set_channel(self.channel)        
-        return self.__analogue_input.percent()
+        return self._analogue_input.percent()
 
     def read_voltage(self):
         self.mux.set_channel(self.channel)        
-        return self.__analogue_input.read_voltage()
+        return self._analogue_input.read_voltage()
 
 class MuxKnob():
     """
@@ -563,17 +563,17 @@ class MuxKnob():
     """
 
     def __init__(self, mux, channel):
-        self.__knob = Knob(mux.pin)
+        self._knob = Knob(mux.pin)
         self.mux = mux
         self.channel = channel
 
     def percent(self):
         self.mux.set_channel(self.channel)        
-        return self.__knob.percent()
+        return self._knob.percent()
 
     def read_position(self):
         self.mux.set_channel(self.channel)        
-        return self.__knob.read_position()
+        return self._knob.read_position()
 
 # Define all the I/O using the appropriate class and with the pins used
 

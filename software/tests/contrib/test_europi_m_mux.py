@@ -18,9 +18,11 @@ from mock_hardware_m import MockHardware
     ]
 )
 def test_Muxknob_percent(mockHardware: MockHardware, value, expected):
-    mockHardware.set_ADC_u16_value(mk1._knob, value)
 
     # assert round(mk1.percent(), 4) == expected
+
+    #this works because the mux knob is a knob.
+    mockHardware.set_ADC_u16_value(mk1._knob, value)
     assert round(mk1._knob.percent(), 4) == expected
 
 
