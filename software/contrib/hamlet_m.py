@@ -6,10 +6,12 @@ from random import randint, uniform, choice
 from europi_script import EuroPiScript
 
 '''
-Hamlet
-author: Sean Bechhofer (github.com/seanbechhofer)
-date: 2022-04-16
+Horatio 
+author: Lui (github.com/luisgongod)
 labels: sequencer, triggers, drums, randomness
+
+
+Modified version of "Hamlet" by Sean Bechhofer (github.com/seanbechhofer)
 
 A gate and CV sequencer that builds on Nik Ansell's Consequencer. Changes are:
 * Slimmed down drum patterns to two instruments, BD/HH
@@ -26,6 +28,12 @@ button_1: Short Press: Play previous CV Pattern. Long Press: Change CV track len
 button_2: Short Press: Generate a new random cv pattern for Tracks 1 and 2. Long Press: Cycle through analogue input modes
 output_1: trigger 1 / Bass Drum
 output_2: trigger 2 / Hi-Hat
+output_3: trigger 3 / Snare
+output_4: trigger 4 / Tom 1
+output_5: trigger 5 / Tom 2
+output_6: trigger 6 / Tom 3
+
+
 output_3: gates for track 1 
 output_4: gates for track 2
 output_5: randomly generated track 2 CV (cycled by pushing button 2)
@@ -282,31 +290,26 @@ class Hamlet(EuroPiScript):
     def updateScreen(self):
         oled.fill(0)
         
-        raw_size = 8
+        
 
         visual_patterns = [
             self.visualizePattern(self.BD[self.pattern]),
             self.visualizePattern(self.HH[self.pattern]),
             self.visualizePattern(self.HH[self.pattern]),
             self.visualizePattern(self.HH[self.pattern]),
-            # self.visualizePattern(self.SN[self.pattern]),
-            # self.visualizePattern(self.OH[self.pattern]),
-            # self.visualizePattern(self.CP[self.pattern]),
-            self.visualizeTrack(self.track_1[self.CvPattern])
+            self.visualizePattern(self.HH[self.pattern]),
+            self.visualizePattern(self.CP[self.pattern]),
         ]
-
-        for i in visual_patterns:
-            oled.text(i, 0, raw_size * (visual_patterns.index(i)),1)
-
-
-        # Show selected pattern visually
-        # oled.text(self.visualizePattern(self.BD[self.pattern]),0,0,1)
-        # oled.text(self.visualizePattern(self.HH[self.pattern]),0,raw_size,1)
         
-        # oled.text(self.visualizeTrack(self.track_1[self.CvPattern]),0,raw_size*3,1)
+        raw_line = 0
+        for v in visual_patterns:
+            oled.text(v,0, raw_line ,1)
+            raw_line += 8
+        
+        oled.text(self.visualizeTrack(self.track_1[self.CvPattern]),0,raw_line-4,1)
 
 
-        low_margine = 6
+        low_margine = 8
         
         # Show randomness
         oled.text('R' + str(int(self.randomness)), 4, OLED_HEIGHT-low_margine, 1)
@@ -323,7 +326,6 @@ class Hamlet(EuroPiScript):
 
         # Show the analogInputMode
         oled.text('M' + str(self.analogInputMode), 112, OLED_HEIGHT-low_margine, 1)
-
 
         oled.show()
 
@@ -451,5 +453,6 @@ if __name__ == '__main__':
     [cv.off() for cv in cvs]
     hm = Hamlet()
     hm.main()
+
 
 
