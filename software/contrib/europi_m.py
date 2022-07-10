@@ -555,10 +555,14 @@ class MuxAnalogueInput():
     def __init__(self, mux,channel,calibration_values, min_voltage, max_voltage):
         self._analogue_input = AnalogueInput(mux.pin, calibration_values, min_voltage, max_voltage)
         self.mux = mux
-        self.channel = channel        
+        self.channel = channel
+    
+    def _set_channel(self):
+        self.mux.set_channel(self.channel)        
+        
 
     def percent(self):
-        self.mux.set_channel(self.channel)        
+        self._set_channel()
         return self._analogue_input.percent()
 
     def read_voltage(self):
@@ -603,6 +607,13 @@ ma3 = MuxAnalogueInput(m0,4,INPUT_CALIBRATION_VALUES_3, -5,5)
 ma4 = MuxAnalogueInput(m0,6,INPUT_CALIBRATION_VALUES_4, -5,5)
 mas = [ma1,ma2,ma3,ma4]
 
+#din = DigitalInput(22)
+#ain = AnalogueInput(26)
+k1 = Knob(27)
+k2 = Knob(28)
+b1 = Button(4)
+b2 = Button(5)
+
 #TODO: inverted in HW
 din1 = DigitalInput(6)
 din2 = DigitalInput(22)
@@ -615,7 +626,6 @@ b2 = Button(4)
 
 oled = Display(2,3 )
 
-#TODO: Invert in HW!
 cv6 = Output(21)
 cv5 = Output(20)
 cv4 = Output(16)
@@ -623,6 +633,12 @@ cv3 = Output(17)
 cv2 = Output(18)
 cv1 = Output(19)
 cvs = [cv1, cv2, cv3, cv4, cv5, cv6]
+
+#make it work with OG Europi:
+ma1._set_channel()
+din = din1 #should be din2 but doesnt matter
+ain = ma1._analogue_input 
+
 
 # Reset the module state upon import.
 reset_state()
