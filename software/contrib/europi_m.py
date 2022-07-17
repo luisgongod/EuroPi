@@ -580,8 +580,11 @@ class MuxKnob():
         self.mux = mux
         self.channel = channel
 
+    def _set_channel(self):
+        self.mux.set_channel(self.channel)
+
     def percent(self):
-        self.mux.set_channel(self.channel)        
+        self._set_channel()        
         return self._knob.percent()
 
     def read_position(self):
