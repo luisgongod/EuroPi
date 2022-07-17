@@ -233,6 +233,8 @@ class Consequencer(EuroPiScript):
         oled.text(self.visualizePattern(self.CY[self.pattern]), 0, spacing*4, 1)
         oled.text(self.visualizePattern(self.CL[self.pattern]), 0, spacing*5, 1)
         
+        oled.rect((self.step-1)*col_size, 0, col_size, OLED_HEIGHT-18, 1)
+            
         oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
         oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
 
@@ -244,17 +246,17 @@ class Consequencer(EuroPiScript):
         bottom_spacing = 8
         oled.text('F' + str(sum(self.fill)), 2, OLED_HEIGHT-bottom_spacing, 1)
         
-        oled.text('R' + str(int(self.randomness)), 26, OLED_HEIGHT-bottom_spacing, 1)
-        # oled.text('S' + str(int(self.step_length)), 26, OLED_HEIGHT-bottom_spacing, 1)
+        oled.text(' R' + str(int(self.randomness)), 26, OLED_HEIGHT-bottom_spacing, 1)
+        oled.text(' S' + str(int(self.step_length)), 26, OLED_HEIGHT-bottom_spacing, 1)
 
 
 
 
         # Show CV pattern
-        oled.text('C' + str(self.CvPattern), 56, OLED_HEIGHT-bottom_spacing, 1)
+        # oled.text('C' + str(self.CvPattern), 56, OLED_HEIGHT-bottom_spacing, 1)
 
         # Show the analogInputMode
-        oled.text('M' + str(self.analogInputMode), 85, OLED_HEIGHT-bottom_spacing, 1)
+        oled.text(' M' + str(self.analogInputMode), 85, OLED_HEIGHT-bottom_spacing, 1)
 
         # Show the pattern number
         oled.text(str(self.pattern), 110, OLED_HEIGHT-bottom_spacing, 1)
