@@ -6,12 +6,10 @@ from random import randint, uniform, choice
 from europi_script import EuroPiScript
 
 '''
-Horatio 
-author: Lui (github.com/luisgongod)
+Hamlet
+author: Sean Bechhofer (github.com/seanbechhofer)
+date: 2022-04-16
 labels: sequencer, triggers, drums, randomness
-
-
-Modified version of "Hamlet" by Sean Bechhofer (github.com/seanbechhofer)
 
 A gate and CV sequencer that builds on Nik Ansell's Consequencer. Changes are:
 * Slimmed down drum patterns to two instruments, BD/HH
@@ -26,30 +24,24 @@ knob_2: select pre-loaded drum pattern
 
 button_1: Short Press: Play previous CV Pattern. Long Press: Change CV track length multiplier
 button_2: Short Press: Generate a new random cv pattern for Tracks 1 and 2. Long Press: Cycle through analogue input modes
+
 output_1: trigger 1 / Bass Drum
 output_2: trigger 2 / Hi-Hat
-output_3: trigger 3 / Snare
-output_4: trigger 4 / Tom 1
-output_5: trigger 5 / Tom 2
-output_6: trigger 6 / Tom 3
-
-
-output_3: gates for track 1 
-output_4: gates for track 2
-output_5: randomly generated track 2 CV (cycled by pushing button 2)
-output_6: randomly generated track 1 CV (cycled by pushing button 2)
+output_3:  
+output_4: 
+output_5: 
+output_6: 
 
 '''
 
 class Hamlet(EuroPiScript):
     def __init__(self):
-        self.bd = cv1
-        self.hh = cv2
-
-        self.gate_1 = cv3
-        self.cv_1 = cv6
-        self.gate_2 = cv4
-        self.cv_2 = cv5
+        self.bd_cv = cv1
+        self.sn_cv = cv2
+        self.ch_cv = cv3
+        self.oh_cv = cv6
+        self.cy_cv = cv4
+        self.cl_cv = cv5
 
         # Overclock the Pico for improved performance.
         machine.freq(250_000_000)
@@ -57,8 +49,8 @@ class Hamlet(EuroPiScript):
         # Initialize sequencer pattern arrays   
         p = pattern()     
         self.BD=p.BD
-        self.HH=p.HH
         self.SN=p.SN
+        self.CH=p.CH
         self.OH=p.OH
         self.CY=p.CY
         self.CP=p.CP
@@ -125,12 +117,16 @@ class Hamlet(EuroPiScript):
 
             # As the randomness value gets higher, the chance of a randomly selected int being lower gets higher
             if randint(0,99) < self.randomness:
-                self.bd.value(randint(0, 1))
-                self.bd.value(randint(0, 1))
+                self.bd_cv.value(randint(0, 1))
+                self.bd_cv.value(randint(0, 1))
             else:
                 # Trigger drums
-                self.bd.value(int(self.BD[self.pattern][self.drum_step]))
-                self.hh.value(int(self.HH[self.pattern][self.drum_step]))                    
+                self.bd_cv.value(int(self.BD[self.pattern][self.drum_step]))
+                self.sn_cv.value(int(self.SN[self.pattern][self.drum_step]))
+                self.oh_cv.value(int(self.OH[self.pattern][self.drum_step])) 
+                self.ch_cv.value(int(self.CH[self.pattern][self.drum_step]))
+                self.cy_cv.value(int(self.CY[self.pattern][self.drum_step]))
+                self.cl_cv.value(int(self.CP[self.pattern][self.drum_step]))
             
             # A pattern was selected which is shorter than the current step. Set to zero to avoid an error
             if self.drum_step >= self.step_length:
@@ -144,17 +140,17 @@ class Hamlet(EuroPiScript):
             # if sparsity value is above the current control level. So
             # as sparsity increases, notes decrease.
             
-            if track_1_sparsity > self.sparsity:
-                self.cv_1.voltage(track_1_cv)
-                self.gate_1.on()
-            else:
-                self.gate_1.off()
+            # if track_1_sparsity > self.sparsity:
+            #     # self.cv_1.voltage(track_1_cv)
+            #     # self.gate_1.on()
+            # else:
+            #     # self.gate_1.off()
                 
-            if track_2_sparsity > self.sparsity:
-                self.cv_2.voltage(track_2_cv)
-                self.gate_2.on()
-            else:
-                self.gate_2.off()
+            # if track_2_sparsity > self.sparsity:
+            #     self.cv_2.voltage(track_2_cv)
+            #     self.gate_2.on()
+            # else:
+            #     self.gate_2.off()
 
             # Reset clock step at 128 to avoid a HUGE integer if running for a long time
             # over a really long period of time this would look like a memory leak
@@ -177,10 +173,12 @@ class Hamlet(EuroPiScript):
                 
         @din.handler_falling
         def clockTriggerEnd():
-            self.bd.off()
-            self.hh.off()
-            self.gate_1.off()
-            self.gate_2.off()
+            self.bd_cv.off()
+            self.sn_cv.off()
+            self.oh_cv.off()
+            self.ch_cv.off()
+            self.cy_cv.off()
+            self.cl_cv.off()
 
     def generateNewRandomCVPattern(self):
         """Generate new random CV patterns for the voice tracks"""
@@ -294,10 +292,10 @@ class Hamlet(EuroPiScript):
 
         visual_patterns = [
             self.visualizePattern(self.BD[self.pattern]),
-            self.visualizePattern(self.HH[self.pattern]),
-            self.visualizePattern(self.HH[self.pattern]),
-            self.visualizePattern(self.HH[self.pattern]),
-            self.visualizePattern(self.HH[self.pattern]),
+            self.visualizePattern(self.SN[self.pattern]),
+            self.visualizePattern(self.CH[self.pattern]),
+            self.visualizePattern(self.OH[self.pattern]),
+            self.visualizePattern(self.CY[self.pattern]),
             self.visualizePattern(self.CP[self.pattern]),
         ]
         
@@ -333,119 +331,119 @@ class pattern:
 
     # Initialize pattern lists
     BD=[]
-    HH=[]
+    SN=[]
+    CH=[]
     OH=[]
     CY=[]
-    SN=[]
     CP=[]
 
      # Add patterns. This is a smaller number of patterns than in the
     # original Consequencer.
     
-    BD.append("0000000000000000")
-    HH.append("0000000000000000")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("0000000000000000")
+    # HH.append("0000000000000000")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
+
+    # BD.append("1000100010001000")
+    # HH.append("0000000000000000")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
     BD.append("1000100010001000")
-    HH.append("0000000000000000")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
-
-    BD.append("1000100010001000")
-    HH.append("0010001000100010")
     SN.append("0100010001000100")
+    CH.append("0010001000100010")
     OH.append("0000100010001000")
     CY.append("0000000000000000")
     CP.append("0000000100000101")
 
-    BD.append("1000100010001000")
-    HH.append("0010001000100011")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    BD.append("1001001010001000")
+    SN.append("0000010000111000")
+    CH.append("0010001000100011")
+    OH.append("0000110110000000")
+    CY.append("0000001010000000")
+    CP.append("0001000000100000")
 
-    BD.append("1000100010001000")
-    HH.append("0111011101110111")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("1000100010001000")
+    # HH.append("0111011101110111")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
-    BD.append("1000100010001000")
-    HH.append("1111111111111111")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("1000100010001000")
+    # HH.append("1111111111111111")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
-    BD.append("0000000000000000")
-    HH.append("0010001000100010")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("0000000000000000")
+    # HH.append("0010001000100010")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
-    BD.append("1000100010001000")
-    HH.append("0000000001111111")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("1000100010001000")
+    # HH.append("0000000001111111")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
-    BD.append("0000000000000000")
-    HH.append("1111111011111110")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("0000000000000000")
+    # HH.append("1111111011111110")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
-    BD.append("1000100010010100")
-    HH.append("1111111011101110")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("1000100010010100")
+    # HH.append("1111111011101110")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
-    BD.append("1000001100100000")
-    HH.append("1111111111111111")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("1000001100100000")
+    # HH.append("1111111111111111")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
-    BD.append("1000100010001000")
-    HH.append("1111101111111101")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("1000100010001000")
+    # HH.append("1111101111111101")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
-    BD.append("1000100010010100")
-    HH.append("0010001000100011")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("1000100010010100")
+    # HH.append("0010001000100011")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
-    BD.append("1000100010010010")
-    HH.append("0000000000000000")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("1000100010010010")
+    # HH.append("0000000000000000")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
-    BD.append("1000100010010010")
-    HH.append("0010001000100010")
-    SN.append("0000000000000000")
-    OH.append("0000000000000000")
-    CY.append("0000000000000000")
-    CP.append("0000000000000000")
+    # BD.append("1000100010010010")
+    # HH.append("0010001000100010")
+    # SN.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CP.append("0000000000000000")
 
 if __name__ == '__main__':
     # Reset module display state.
