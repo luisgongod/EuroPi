@@ -587,9 +587,9 @@ class MuxKnob():
         self._set_channel()        
         return self._knob.percent()
 
-    def read_position(self):
+    def read_position(self,steps=100):
         self.mux.set_channel(self.channel)        
-        return self._knob.read_position()
+        return self._knob.read_position(steps)
 
 # Define all the I/O using the appropriate class and with the pins used
 

@@ -128,18 +128,12 @@ class Consequencer(EuroPiScript):
                 cv5.value(randint(0, 1))
                 cv6.value(randint(0, 1))
             else:
-                cv1.value(int(self.BD[self.pattern][self.step]))
-                cv2.value(int(self.SN[self.pattern][self.step]))                    
-
-                # If randomize HH is ON:
-                if self.random_HH:
-                    cv3.value(randint(0, 1))
-                else:
-                    cv3.value(int(self.HH[self.pattern][self.step]))
-
-                cv4.value(int(self.OH[self.pattern][self.step]))                    
-                cv5.value(int(self.CY[self.pattern][self.step]))                    
-                cv6.value(int(self.CL[self.pattern][self.step]))                    
+                cv1.value(int(self.BD[self.pattern][self.step])*self.fill[self.step])
+                cv2.value(int(self.SN[self.pattern][self.step])*self.fill[self.step])                    
+                cv3.value(int(self.HH[self.pattern][self.step])*self.fill[self.step])
+                cv4.value(int(self.OH[self.pattern][self.step])*self.fill[self.step])                    
+                cv5.value(int(self.CY[self.pattern][self.step])*self.fill[self.step])                    
+                cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step])                    
                 
 
             # Incremenent the clock step
@@ -172,26 +166,16 @@ class Consequencer(EuroPiScript):
     
     def getFill(self):
         #fill based on the amount of eucledian fill         
-        if self.analogInputMode != 3 or self.fill == []:
+        if self.analogInputMode != 3:
             return
         else:
             # Get the analogue input voltage as a percentage of fill
-            nfill =  int(self.step_length * ain.percent())
+            nfill =  int(self.step_length * ain.percent())+1
 
+            
             self.fill = eucledian_rhythm(self.step_length,nfill)
+                
             
-    # def getCvPattern(self):
-    #     # If analogue input mode 3, get the CV pattern from CV input
-    #     if self.analogInputMode != 3:
-    #         return
-    #     else:
-    #         # Get the analogue input voltage as a percentage
-    #         CvpVal = 100 * ain.percent()
-            
-    #         # Is there a voltage on the analogue input and are we configured to use it?
-    #         if CvpVal > 0.4:
-    #             # Convert percentage value to a representative index of the pattern array
-    #             self.CvPattern = int((len(self.random4) / 100) * CvpVal)
 
     def generateRandomPattern(self, length, min, max):
         self.t=[]
@@ -212,7 +196,6 @@ class Consequencer(EuroPiScript):
         while True:
             self.getPattern()
             self.getRandomness()
-            # self.getCvPattern()
             self.getFill()
             self.updateScreen()
             # If I have been running, then stopped for longer than reset_timeout, reset the steps and clock_step to 0
@@ -250,15 +233,8 @@ class Consequencer(EuroPiScript):
         oled.text(self.visualizePattern(self.CY[self.pattern]), 0, spacing*4, 1)
         oled.text(self.visualizePattern(self.CL[self.pattern]), 0, spacing*5, 1)
         
-        oled.text("^", self.step*col_size, OLED_HEIGHT-18, 1)
+        oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
         oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
-
-        # oled.text(self.visualizeTrack(self.track_1[self.CvPattern]),0,55,1)
-
-
-        # If the random toggle is on, show a rectangle
-        if self.random_HH:
-            oled.fill_rect(0, 29, 10, 3, 1)
 
         # Show self.output4isClock value
         if self.output4isClock:
@@ -266,7 +242,13 @@ class Consequencer(EuroPiScript):
 
         # Show randomness
         bottom_spacing = 8
+        oled.text('F' + str(sum(self.fill)), 2, OLED_HEIGHT-bottom_spacing, 1)
+        
         oled.text('R' + str(int(self.randomness)), 26, OLED_HEIGHT-bottom_spacing, 1)
+        # oled.text('S' + str(int(self.step_length)), 26, OLED_HEIGHT-bottom_spacing, 1)
+
+
+
 
         # Show CV pattern
         oled.text('C' + str(self.CvPattern), 56, OLED_HEIGHT-bottom_spacing, 1)
