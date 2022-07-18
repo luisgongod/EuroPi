@@ -11,19 +11,30 @@ author: Luis G (github.com/luisgongod)
 date: 
 labels: sequencer, triggers, drums, randomness
 
-A gate sequencer that builds on Nik Ansell's Consequencer
+A gate sequencer that builds on Nik Ansell's Consequencer. 
+Inspired by Grids from mutable instruments. 
+Can control up 6 instruments, adding sequences for each channel
+Perfect to use with something like the Weston Audio AD110
+
+CONTROLS:
+knob_1: Randomness
+knob_2: Fill, based on euclediaan rhythms
+
 
 digital_in: clock in
-analog_in: randomness CV
+analog_in: CV for Randomness, Fill or Pattern
 
-knob_1: randomness
-knob_2: select pre-loaded drum pattern
+button_1: 
+- Short Press  (<300ms)  : Previous Drum pattern
+- Medium Press (>300ms)  : Cycles through clock divisors (1/1, 1/2, 1/4)
+- Long Press  (>2000ms)  : ???
 
-button_1: Short Press: toggle randomized hi-hats on / off. Long Press: Play previous CV Pattern
 button_2:
-- Short Press  (<300ms)  : Generate a new random cv pattern for outputs 4 - 6.
-- Medium Press (>300ms)  : Cycle through analogue input modes
-- Long Press   (>3000ms) : Toggle option to send clocks from output 4 on / off
+- Short Press  (<300ms)  : Next Drum pattern
+- Medium Press (>300ms)  : Cycles what AIN can CV, (randomness -> fill -> Pattern -> randomness)
+- Long Press   (>2000ms) : Toggle option for Random/Fill behaviour mode, 
+    &: Random applies only to Filled steps
+    |: Random applies to all steps if > 0
 
 output_1: trigger 1 / Bass Drum
 output_2: trigger 2 / Snare Drum
@@ -39,7 +50,7 @@ class Consequencer(EuroPiScript):
         # Overclock the Pico for improved performance.
         machine.freq(250_000_000)
 
-        # M exclusive:
+        ###################################################### M exclusive:
         mk1._set_channel()
 
         # Initialize sequencer pattern arrays   
@@ -51,58 +62,78 @@ class Consequencer(EuroPiScript):
         self.CY=p.CY
         self.CL=p.CL
 
+        self.AIN_MODE = ['Random', 'Fill', 'Pattern']
+        self.CLOCK_DIVISORS = [1, 2, 4]
+
         # Initialize variables
         self.step = 0
         self.trigger_duration_ms = 50
         self.clock_step = 0
+        self.clock_divisor = 1
         self.pattern = 0
         self.random_HH = False
-        self.minAnalogInputVoltage = 0.9
+        self.minAnalogInputVoltage = 0.9 # Minimum voltage for analog input to be considered
         self.randomness = 0
-        self.analogInputMode = 3 # 1: Randomness, 2: Pattern, 3: Fill
+        self.analogInputMode = 3 # initial mode 1: Randomness, 2: Pattern, 3: Fill
+        self.rand_fill_mode = 0 #  0: Random && Fill, 1: Random >> Fill
         self.CvPattern = 0
         self.reset_timeout = 500
 
         self.fill = []
-
-        # option to always output a clock on output 4
-        # this helps to sync Consequencer with other modules
-        self.output4isClock = False
         
         # Calculate the longest pattern length to be used when generating random sequences
         self.maxStepLength = len(max(self.BD, key=len))
-        
+      
 
         # Triggered when button 2 is released.
-        # Short press: Generate random CV for cv4-6
-        # Long press: Change operating mode
+        # - Short Press  (<300ms)  : Next Drum pattern
+        # - Medium Press (>300ms)  : Cycles what AIN can CV, (randomness -> fill -> Pattern -> randomness)
+        # - Long Press   (>2000ms) : Toggle option for Random/Fill behaviour mode, 
         @b2.handler_falling
         def b2Pressed():
+            #Toggle Random/Fill mode
+            # if more modes are added, this will need to be updated
+            #     &: Random applies only to Filled steps
+            #     |: Random applies to all steps if > 0
+            if ticks_diff(ticks_ms(), b2.last_pressed()) >  2000:
+                self.rand_fill_mode = not(self.rand_fill_mode)
             
-            if ticks_diff(ticks_ms(), b2.last_pressed()) >  300:
-                if self.analogInputMode < 3:
-                    self.analogInputMode += 1
-                else:
-                    self.analogInputMode = 1
+            # AIN CV mode
+            elif ticks_diff(ticks_ms(), b2.last_pressed()) >  300:
+                self.analogInputMode = self.analogInputMode + 1
+                if self.analogInputMode >= len(self.AIN_MODE):
+                    self.analogInputMode = 0
+            
+            #next drum pattern
             else:
-                # Move to next cv pattern if one already exists, otherwise create a new one
-                self.CvPattern += 1
-                if self.CvPattern == len(self.random4):
-                    self.generateNewRandomCVPattern()
+                self.pattern = (self.pattern + 1) 
+                if self.pattern >= len(self.BD):
+                    self.pattern = 0
+                
+                self.step_length = len(self.BD[self.pattern])
             
-        # Triggered when button 1 is released
-        # Short press: Play previous CV pattern for cv4-6
-        # Long press: Toggle random high-hat mode
+            
+            
+        # - Short Press  (<300ms)  : Previous Drum pattern
+        # - Medium Press (>300ms)  : Cycles through clock divisors (1/1, 1/2, 1/4)
+        # - Long Press   (>2000ms) : ???
         @b1.handler_falling
         def b1Pressed():
-            if ticks_diff(ticks_ms(), b1.last_pressed()) > 2000:
-                self.output4isClock = not self.output4isClock
-            elif ticks_diff(ticks_ms(), b1.last_pressed()) >  300:
-                self.random_HH = not self.random_HH
+            if ticks_diff(ticks_ms(), b2.last_pressed()) >  2000:
+                pass
+            
+            # clock divisor
+            elif ticks_diff(ticks_ms(), b2.last_pressed()) >  300:
+                self.clock_divisor = (self.clock_divisor + 1) % len(self.CLOCK_DIVISORS)
+            
+            #prev drum pattern
             else:
-                # Play previous CV Pattern, unless we are at the first pattern
-                if self.CvPattern != 0:
-                    self.CvPattern -= 1
+                self.pattern = (self.pattern - 1) 
+                if self.pattern > 0:
+                    self.pattern = len(self.BD) - 1
+                
+                self.step_length = len(self.BD[self.pattern])
+            
 
         # Triggered on each clock into digital input. Output triggers.
         @din.handler
@@ -117,24 +148,24 @@ class Consequencer(EuroPiScript):
             if self.step >= self.step_length:
                 self.step = 0 
             
-
-            # How much randomness to add to cv1-3
-            # As the randomness value gets higher, the chance of a randomly selected int being lower gets higher
-            if randint(0,99) < self.randomness:
-                cv1.value(randint(0, 1))
-                cv2.value(randint(0, 1))
-                cv3.value(randint(0, 1))
-                cv4.value(randint(0, 1))
-                cv5.value(randint(0, 1))
-                cv6.value(randint(0, 1))
+            # mode Random priority
+            if self.rand_fill_mode == 0:
+                if randint(0,99) < self.randomness:
+                    cv1.value(randint(0, 1))
+                    cv2.value(randint(0, 1))
+                    cv3.value(randint(0, 1))
+                    cv4.value(randint(0, 1))
+                    cv5.value(randint(0, 1))
+                    cv6.value(randint(0, 1))
+                else:
+                    cv1.value(int(self.BD[self.pattern][self.step])*self.fill[self.step])
+                    cv2.value(int(self.SN[self.pattern][self.step])*self.fill[self.step])                    
+                    cv3.value(int(self.HH[self.pattern][self.step])*self.fill[self.step])
+                    cv4.value(int(self.OH[self.pattern][self.step])*self.fill[self.step])                    
+                    cv5.value(int(self.CY[self.pattern][self.step])*self.fill[self.step])                    
+                    cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step])                    
             else:
-                cv1.value(int(self.BD[self.pattern][self.step])*self.fill[self.step])
-                cv2.value(int(self.SN[self.pattern][self.step])*self.fill[self.step])                    
-                cv3.value(int(self.HH[self.pattern][self.step])*self.fill[self.step])
-                cv4.value(int(self.OH[self.pattern][self.step])*self.fill[self.step])                    
-                cv5.value(int(self.CY[self.pattern][self.step])*self.fill[self.step])                    
-                cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step])                    
-                
+
 
             # Incremenent the clock step
             self.clock_step +=1
@@ -156,8 +187,10 @@ class Consequencer(EuroPiScript):
 
     def getPattern(self):
         # If mode 2 and there is CV on the analogue input use it, if not use the knob position
+
+        
         val = 100 * ain.percent()
-        if self.analogInputMode == 2 and val > self.minAnalogInputVoltage:
+        if  self.AIN_MODE[self.analogInputMode] == "Pattern" and val > self.minAnalogInputVoltage:
             self.pattern = int((len(self.BD) / 100) * val)
         else:
             self.pattern = k2.read_position(len(self.BD))
@@ -248,8 +281,6 @@ class Consequencer(EuroPiScript):
         
         oled.text(' R' + str(int(self.randomness)), 26, OLED_HEIGHT-bottom_spacing, 1)
         oled.text(' S' + str(int(self.step_length)), 26, OLED_HEIGHT-bottom_spacing, 1)
-
-
 
 
         # Show CV pattern
