@@ -146,27 +146,33 @@ class Consequencer(EuroPiScript):
             
             # A pattern was selected which is shorter than the current step. Set to zero to avoid an error
             if self.step >= self.step_length:
-                self.step = 0 
-            
-            # mode Random priority
-            if self.rand_fill_mode == 0:
-                if randint(0,99) < self.randomness:
+                self.step = 0             
+
+            if self.randomness == 0:
+                cv1.value(int(self.BD[self.pattern][self.step])*self.fill[self.step])
+                cv2.value(int(self.SN[self.pattern][self.step])*self.fill[self.step])                    
+                cv3.value(int(self.HH[self.pattern][self.step])*self.fill[self.step])
+                cv4.value(int(self.OH[self.pattern][self.step])*self.fill[self.step])                    
+                cv5.value(int(self.CY[self.pattern][self.step])*self.fill[self.step])                    
+                cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step])                                        
+
+            else: # randomness > 0
+                if self.rand_fill_mode == 0: # Random over Fill
                     cv1.value(randint(0, 1))
                     cv2.value(randint(0, 1))
                     cv3.value(randint(0, 1))
                     cv4.value(randint(0, 1))
                     cv5.value(randint(0, 1))
                     cv6.value(randint(0, 1))
-                else:
-                    cv1.value(int(self.BD[self.pattern][self.step])*self.fill[self.step])
-                    cv2.value(int(self.SN[self.pattern][self.step])*self.fill[self.step])                    
-                    cv3.value(int(self.HH[self.pattern][self.step])*self.fill[self.step])
-                    cv4.value(int(self.OH[self.pattern][self.step])*self.fill[self.step])                    
-                    cv5.value(int(self.CY[self.pattern][self.step])*self.fill[self.step])                    
-                    cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step])                    
-            else:
-
-
+    
+                else:# Random && Fill                     
+                    cv1.value(int(self.BD[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))
+                    cv2.value(int(self.SN[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))                    
+                    cv3.value(int(self.HH[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))
+                    cv4.value(int(self.OH[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))                    
+                    cv5.value(int(self.CY[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))                    
+                    cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))                                        
+             
             # Incremenent the clock step
             self.clock_step +=1
             self.step += 1
