@@ -63,21 +63,23 @@ class Consequencer(EuroPiScript):
         self.CL=p.CL
 
         self.AIN_MODE = ['Random', 'Fill', 'Pattern']
-        self.CLOCK_DIVISORS = [1, 2, 4]
+        self.CLOCK_DIVISORS = [1, 2, 4]        
 
         # Initialize variables
         self.step = 0
         self.trigger_duration_ms = 50
         self.clock_step = 0
-        self.clock_divisor = 1
+        self.clock_divisor = 0
         self.pattern = 0
         self.random_HH = False
         self.minAnalogInputVoltage = 0.9 # Minimum voltage for analog input to be considered
         self.randomness = 0
-        self.analogInputMode = 3 # initial mode 1: Randomness, 2: Pattern, 3: Fill
+        self.analogInputMode = 1 # initial mode 0: Randomness, 1: Pattern, 2: Fill #BUG: out of bounds when = 2
         self.rand_fill_mode = 0 #  0: Random && Fill, 1: Random >> Fill
         self.CvPattern = 0
         self.reset_timeout = 500
+        
+        self.step_length = len(self.BD[self.pattern])
 
         self.fill = []
         
@@ -119,19 +121,18 @@ class Consequencer(EuroPiScript):
         # - Long Press   (>2000ms) : ???
         @b1.handler_falling
         def b1Pressed():
-            if ticks_diff(ticks_ms(), b2.last_pressed()) >  2000:
+            if ticks_diff(ticks_ms(), b1.last_pressed()) >  2000:
                 pass
             
             # clock divisor
-            elif ticks_diff(ticks_ms(), b2.last_pressed()) >  300:
+            elif ticks_diff(ticks_ms(), b1.last_pressed()) >  300:
                 self.clock_divisor = (self.clock_divisor + 1) % len(self.CLOCK_DIVISORS)
             
             #prev drum pattern
             else:
                 self.pattern = (self.pattern - 1) 
-                if self.pattern > 0:
-                    self.pattern = len(self.BD) - 1
-                
+                if self.pattern < 0:
+                    self.pattern = len(self.BD)-1
                 self.step_length = len(self.BD[self.pattern])
             
 
@@ -191,51 +192,74 @@ class Consequencer(EuroPiScript):
             cv6.off()
 
 
-    def getPattern(self):
-        # If mode 2 and there is CV on the analogue input use it, if not use the knob position
+        
+    def getParams(self):
 
-        
-        val = 100 * ain.percent()
-        if  self.AIN_MODE[self.analogInputMode] == "Pattern" and val > self.minAnalogInputVoltage:
-            self.pattern = int((len(self.BD) / 100) * val)
-        else:
-            self.pattern = k2.read_position(len(self.BD))
-        
+        val = ain.percent()
+        extra_random = 0
+        extra_fill = 0
+        extra_pattern = 0
+
+        # if self.analogInputMode == 0 and val > self.minAnalogInputVoltage:
+
+
+        if self.analogInputMode == 0: #Random
+            extra_random = val
+            pass
+        elif self.analogInputMode == 1: #Fill
+            extra_fill = val
+            pass
+        elif self.analogInputMode == 2: # Pattern
+            extra_pattern = val
+            pass
+
+            #TODO HERE< MAX stffff
+        self.randomness = int((k1.percent() * (1-extra_random))*100)
+
+        nfill =  k2.read_position(self.step_length) + extra_fill        
+
+        self.fill = eucledian_rhythm(self.step_length,nfill)
+
         self.step_length = len(self.BD[self.pattern])
+
     
-    def getFill(self):
-        #fill based on the amount of eucledian fill         
-        if self.analogInputMode != 3:
-            return
-        else:
-            # Get the analogue input voltage as a percentage of fill
-            nfill =  int(self.step_length * ain.percent())+1
-
-            
-            self.fill = eucledian_rhythm(self.step_length,nfill)
-                
-            
-
-    def generateRandomPattern(self, length, min, max):
-        self.t=[]
-        for i in range(0, length):
-            self.t.append(uniform(0,9))
-        return self.t
-
-
-    def getRandomness(self):
-        # If mode 1 and there is CV on the analogue input use it, if not use the knob position
+    
         val = 100 * ain.percent()
-        if self.analogInputMode == 1 and val > self.minAnalogInputVoltage:
             self.randomness = val
-        else:
-            self.randomness = k1.read_position()
+
+        # if  self.AIN_MODE[self.analogInputMode] == "Pattern" and val > self.minAnalogInputVoltage:
+        #     self.pattern = int((len(self.BD) / 100) * val)
+        # else:
+        #     self.pattern = k2.read_position(len(self.BD))
+        
+        
+        #fill based on the amount of eucledian fill         
+        # if self.analogInputMode != 3:
+        #     return
+        # else:
+        #     # Get the analogue input voltage as a percentage of fill
+
+            
+                
+        # Get Pattern from AIN    
+        # If mode 2 and there is CV on the analogue input use it, if not use the knob position
+        return
+
+        
+        # val = 100 * ain.percent()
+            
+
+    # def generateRandomPattern(self, length, min, max):
+    #     self.t=[]
+    #     for i in range(0, length):
+    #         self.t.append(uniform(0,9))
+    #     return self.t
+
+
 
     def main(self):
         while True:
-            self.getPattern()
-            self.getRandomness()
-            self.getFill()
+            self.getParams()            
             self.updateScreen()
             # If I have been running, then stopped for longer than reset_timeout, reset the steps and clock_step to 0
             if self.clock_step != 0 and ticks_diff(ticks_ms(), din.last_triggered()) > self.reset_timeout:
@@ -276,27 +300,20 @@ class Consequencer(EuroPiScript):
             
         oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
         oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
-
-        # Show self.output4isClock value
-        if self.output4isClock:
-            oled.rect(12, 29, 10, 3, 1)
+        
+        
 
         # Show randomness
         bottom_spacing = 8
-        oled.text('F' + str(sum(self.fill)), 2, OLED_HEIGHT-bottom_spacing, 1)
+        #         ' R99 F16 P42 &4 '        
+        oled.text('             ' + str(int(self.rand_fill_mode))+str(self.CLOCK_DIVISORS[self.clock_divisor]), 0, OLED_HEIGHT-bottom_spacing, 1)
+        oled.text('         P' + str(self.pattern), 0, OLED_HEIGHT-bottom_spacing, 1)
+        oled.text('     F' + str(sum(self.fill)), 0, OLED_HEIGHT-bottom_spacing, 1)        
+        oled.text(' R' + str(int(self.randomness)), 0, OLED_HEIGHT-bottom_spacing, 1)
+
         
-        oled.text(' R' + str(int(self.randomness)), 26, OLED_HEIGHT-bottom_spacing, 1)
-        oled.text(' S' + str(int(self.step_length)), 26, OLED_HEIGHT-bottom_spacing, 1)
-
-
-        # Show CV pattern
-        # oled.text('C' + str(self.CvPattern), 56, OLED_HEIGHT-bottom_spacing, 1)
-
-        # Show the analogInputMode
-        oled.text(' M' + str(self.analogInputMode), 85, OLED_HEIGHT-bottom_spacing, 1)
-
-        # Show the pattern number
-        oled.text(str(self.pattern), 110, OLED_HEIGHT-bottom_spacing, 1)
+        oled.rect(self.analogInputMode*32+8, OLED_HEIGHT-bottom_spacing, 24, bottom_spacing, 1)
+        
 
         oled.show()
     
@@ -557,4 +574,5 @@ if __name__ == '__main__':
     [cv.off() for cv in cvs]
     dm = Consequencer()
     dm.main()
+
 
