@@ -266,7 +266,7 @@ class Consequencer(EuroPiScript):
 
     def visualizePattern(self, pattern):
         self.t = pattern
-        self.t = self.t.replace('1','o')
+        self.t = self.t.replace('1','.')
         self.t = self.t.replace('0',' ')
         return self.t
     
@@ -274,19 +274,28 @@ class Consequencer(EuroPiScript):
         filltext = ''
         for i in range(0, len(fillpattern)):
             if fillpattern[i] == 1:
-                filltext += '.'
+                filltext += '-'
             else:
                 filltext += ' '
         return filltext
+    
+    def downarrow(pos,color = 1):  
+        x= 8*pos +1
+        
+        for i in range(6):
+            oled.pixel(x+i,0,color)
+        for i in range(4):
+            oled.pixel(x+i+1,1,color)
+        for i in range(2):
+            oled.pixel(x+i+2,2,color)
 
-    def updateScreen(self):
-        # oled.clear() - dont use this, it causes the screen to flicker!
-        oled.fill(0)
- 
-        # Show selected pattern visually
-        spacing = 7
+
+
+    
+    def displayPattern(self):
+                # Show selected pattern visually
+        spacing = 3
         col_size = int(OLED_WIDTH / 16)
-
         oled.text(self.visualizePattern(self.BD[self.pattern]), 0, spacing*0, 1)
         oled.text(self.visualizePattern(self.SN[self.pattern]), 0, spacing*1, 1)
         oled.text(self.visualizePattern(self.HH[self.pattern]), 0, spacing*2, 1)
@@ -296,8 +305,29 @@ class Consequencer(EuroPiScript):
         
         oled.rect((self.step-1)*col_size, 0, col_size, OLED_HEIGHT-18, 1)
             
-        oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
+        # oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
         oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
+
+    def updateScreen(self):
+        # oled.clear() - dont use this, it causes the screen to flicker!
+        oled.fill(0)
+ 
+        # Show selected pattern visually
+        # spacing = 7
+        # col_size = int(OLED_WIDTH / 16)
+        # oled.text(self.visualizePattern(self.BD[self.pattern]), 0, spacing*0, 1)
+        # oled.text(self.visualizePattern(self.SN[self.pattern]), 0, spacing*1, 1)
+        # oled.text(self.visualizePattern(self.HH[self.pattern]), 0, spacing*2, 1)
+        # oled.text(self.visualizePattern(self.OH[self.pattern]), 0, spacing*3, 1)
+        # oled.text(self.visualizePattern(self.CY[self.pattern]), 0, spacing*4, 1)
+        # oled.text(self.visualizePattern(self.CL[self.pattern]), 0, spacing*5, 1)
+        
+        # oled.rect((self.step-1)*col_size, 0, col_size, OLED_HEIGHT-18, 1)
+            
+        # oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
+        # oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
+        self.displayPattern()
+        self.downarrow(self.step)
         
         
 
