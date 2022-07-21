@@ -204,28 +204,26 @@ class Consequencer(EuroPiScript):
 
 
         if self.analogInputMode == 0: #Random
-            extra_random = val
+            extra_random = int(val*100) # 0-100
             pass
         elif self.analogInputMode == 1: #Fill
-            extra_fill = val
+            extra_fill = round(val*self.step_length)-1 # 0-step_length
             pass
         elif self.analogInputMode == 2: # Pattern
-            extra_pattern = val
-            pass
+            extra_pattern = round(val*len(self.BD))-1 # 0- number of patterns
+            self.pattern = (extra_pattern + self.pattern)%len(self.BD)
+            self.step_length = len(self.BD[self.pattern])
+            
+        #TOCHECK:
+        self.randomness = min(k1.read_position() + extra_random,99)
 
-            #TODO HERE< MAX stffff
-        self.randomness = int((k1.percent() * (1-extra_random))*100)
-
-        nfill =  k2.read_position(self.step_length) + extra_fill        
+        nfill =  min(k2.read_position(self.step_length) + extra_fill,self.step_length-1)  
 
         self.fill = eucledian_rhythm(self.step_length,nfill)
 
-        self.step_length = len(self.BD[self.pattern])
-
-    
     
         val = 100 * ain.percent()
-            self.randomness = val
+        self.randomness = val
 
         # if  self.AIN_MODE[self.analogInputMode] == "Pattern" and val > self.minAnalogInputVoltage:
         #     self.pattern = int((len(self.BD) / 100) * val)
