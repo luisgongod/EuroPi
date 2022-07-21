@@ -70,11 +70,13 @@ class Consequencer(EuroPiScript):
         self.trigger_duration_ms = 50
         self.clock_step = 0
         self.clock_divisor = 0
+        self.base_pattern = 0
+        self.extra_pattern = 0
         self.pattern = 0
         self.random_HH = False
         self.minAnalogInputVoltage = 0.9 # Minimum voltage for analog input to be considered
         self.randomness = 0
-        self.analogInputMode = 1 # initial mode 0: Randomness, 1: Pattern, 2: Fill #BUG: out of bounds when = 2
+        self.analogInputMode = 1 # initial mode 0: Randomness, 1: Fill, 2: Pattern 
         self.rand_fill_mode = 0 #  0: Random && Fill, 1: Random >> Fill
         self.CvPattern = 0
         self.reset_timeout = 500
@@ -108,10 +110,8 @@ class Consequencer(EuroPiScript):
             
             #next drum pattern
             else:
-                self.pattern = (self.pattern + 1) 
-                if self.pattern >= len(self.BD):
-                    self.pattern = 0
-                
+                self.base_pattern = (self.base_pattern + 1)%len(self.BD)
+                self.pattern = (self.base_pattern + self.extra_pattern)%len(self.BD)
                 self.step_length = len(self.BD[self.pattern])
             
             
@@ -129,12 +129,10 @@ class Consequencer(EuroPiScript):
                 self.clock_divisor = (self.clock_divisor + 1) % len(self.CLOCK_DIVISORS)
             
             #prev drum pattern
-            else:
-                self.pattern = (self.pattern - 1) 
-                if self.pattern < 0:
-                    self.pattern = len(self.BD)-1
+            else:                
+                self.base_pattern = (self.base_pattern - 1)%len(self.BD)
+                self.pattern = (self.base_pattern + self.extra_pattern)%len(self.BD)
                 self.step_length = len(self.BD[self.pattern])
-            
 
         # Triggered on each clock into digital input. Output triggers.
         @din.handler
@@ -195,63 +193,34 @@ class Consequencer(EuroPiScript):
         
     def getParams(self):
 
-        val = ain.percent()
+        val = 1-ain.percent() #invert potentiometer value, might be different for OG Europi
         extra_random = 0
         extra_fill = 0
-        extra_pattern = 0
-
-        # if self.analogInputMode == 0 and val > self.minAnalogInputVoltage:
-
-
+        
+    
         if self.analogInputMode == 0: #Random
             extra_random = int(val*100) # 0-100
-            pass
+            
         elif self.analogInputMode == 1: #Fill
-            extra_fill = round(val*self.step_length)-1 # 0-step_length
-            pass
+            extra_fill = round(val*self.step_length) # 0 to step_length-1
+            
         elif self.analogInputMode == 2: # Pattern
-            extra_pattern = round(val*len(self.BD))-1 # 0- number of patterns
-            self.pattern = (extra_pattern + self.pattern)%len(self.BD)
+            self.extra_pattern = round(val*(len(self.BD)-1))-1 # 0- number of patterns
+
+            self.pattern = (self.base_pattern + self.extra_pattern)%len(self.BD)
             self.step_length = len(self.BD[self.pattern])
+
             
         #TOCHECK:
         self.randomness = min(k1.read_position() + extra_random,99)
 
-        nfill =  min(k2.read_position(self.step_length) + extra_fill,self.step_length-1)  
+        nfill = k2.read_position(self.step_length+1) + extra_fill
+        if nfill < 1: nfill = 1
+        elif nfill > self.step_length: nfill = self.step_length
+
 
         self.fill = eucledian_rhythm(self.step_length,nfill)
 
-    
-        val = 100 * ain.percent()
-        self.randomness = val
-
-        # if  self.AIN_MODE[self.analogInputMode] == "Pattern" and val > self.minAnalogInputVoltage:
-        #     self.pattern = int((len(self.BD) / 100) * val)
-        # else:
-        #     self.pattern = k2.read_position(len(self.BD))
-        
-        
-        #fill based on the amount of eucledian fill         
-        # if self.analogInputMode != 3:
-        #     return
-        # else:
-        #     # Get the analogue input voltage as a percentage of fill
-
-            
-                
-        # Get Pattern from AIN    
-        # If mode 2 and there is CV on the analogue input use it, if not use the knob position
-        return
-
-        
-        # val = 100 * ain.percent()
-            
-
-    # def generateRandomPattern(self, length, min, max):
-    #     self.t=[]
-    #     for i in range(0, length):
-    #         self.t.append(uniform(0,9))
-    #     return self.t
 
 
 
@@ -279,8 +248,8 @@ class Consequencer(EuroPiScript):
                 filltext += ' '
         return filltext
     
-    def downarrow(pos,color = 1):  
-        x= 8*pos +1
+    def downarrow(self,pos,color = 1):  
+        x= (8 * pos) + 1
         
         for i in range(6):
             oled.pixel(x+i,0,color)
@@ -303,11 +272,11 @@ class Consequencer(EuroPiScript):
         oled.text(self.visualizePattern(self.CY[self.pattern]), 0, spacing*4, 1)
         oled.text(self.visualizePattern(self.CL[self.pattern]), 0, spacing*5, 1)
         
-        oled.rect((self.step-1)*col_size, 0, col_size, OLED_HEIGHT-18, 1)
+        # oled.fill_rect((self.step-1)*col_size, 0, col_size, OLED_HEIGHT-18, 1)
             
         # oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
         oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
-
+        
     def updateScreen(self):
         # oled.clear() - dont use this, it causes the screen to flicker!
         oled.fill(0)
@@ -327,20 +296,20 @@ class Consequencer(EuroPiScript):
         # oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
         # oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
         self.displayPattern()
-        self.downarrow(self.step)
+        self.downarrow(self.step-1)
         
         
-
-        # Show randomness
         bottom_spacing = 8
-        #         ' R99 F16 P42 &4 '        
-        oled.text('             ' + str(int(self.rand_fill_mode))+str(self.CLOCK_DIVISORS[self.clock_divisor]), 0, OLED_HEIGHT-bottom_spacing, 1)
-        oled.text('         P' + str(self.pattern), 0, OLED_HEIGHT-bottom_spacing, 1)
-        oled.text('     F' + str(sum(self.fill)), 0, OLED_HEIGHT-bottom_spacing, 1)        
-        oled.text(' R' + str(int(self.randomness)), 0, OLED_HEIGHT-bottom_spacing, 1)
+        #' R99 F16 P42 &4 '       
+        oled.fill_rect(self.analogInputMode*32+8, OLED_HEIGHT-bottom_spacing-1, 24, bottom_spacing, 1)
+
+        oled.text(str(int(self.rand_fill_mode))+str(self.CLOCK_DIVISORS[self.clock_divisor]), 8*13, OLED_HEIGHT-bottom_spacing, 1)
+
+        oled.text('R' + str(int(self.randomness)), 8*1, OLED_HEIGHT-bottom_spacing, self.analogInputMode !=0) #randomness analogInputMode = 0
+        oled.text('F' + str(sum(self.fill)), 8*5, OLED_HEIGHT-bottom_spacing, self.analogInputMode != 1)       #fill analogInputMode =1
+        oled.text('P' + str(self.pattern), 8*9, OLED_HEIGHT-bottom_spacing, self.analogInputMode != 2)         #pattern analogInputMode =2
 
         
-        oled.rect(self.analogInputMode*32+8, OLED_HEIGHT-bottom_spacing, 24, bottom_spacing, 1)
         
 
         oled.show()
@@ -498,33 +467,33 @@ class pattern:
 
     # End external patterns
     #32
-    # BD.append("1100000001010000")
-    # SN.append("0000101000001000")
-    # HH.append("0101010101010101")
-    # OH.append("0000000000000000")
-    # CY.append("0000000000000000")
-    # CL.append("0000000000000000")
+    BD.append("1100000001010000")
+    SN.append("0000101000001000")
+    HH.append("0101010101010101")
+    OH.append("0001000101110000")
+    CY.append("0110000000001000")
+    CL.append("0010000010000101")
 
-    # BD.append("1100000001010000")
-    # SN.append("0000101000001000")
-    # HH.append("1111111111111111")
-    # OH.append("0000000000000000")
-    # CY.append("0000000000000000")
-    # CL.append("0000000000000000")
+    BD.append("1100000001010000")
+    SN.append("0000101000001000")
+    HH.append("1111111111111111")
+    OH.append("0100101000101001")
+    CY.append("0000100010000000")
+    CL.append("0110000010000101")
 
-    # BD.append("1001001001000100")
-    # SN.append("0001000000010000")
-    # HH.append("0101110010011110")
-    # OH.append("0000000000000000")
-    # CY.append("0000000000000000")
-    # CL.append("0000000000000000")
+    BD.append("1001001001000100")
+    SN.append("0001000000010000")
+    HH.append("0101110010011110")
+    OH.append("1000001100100001")
+    CY.append("0000000100001000")
+    CL.append("0000100010000001")
 
-    # BD.append("1001001001000100")
-    # SN.append("0001000000010000")
-    # HH.append("1111111111111111")
-    # OH.append("0000000000000000")
-    # CY.append("0000000000000000")
-    # CL.append("0000000000000000")
+    BD.append("1001001001000100")
+    SN.append("0001000000010000")
+    HH.append("1111111111111111")
+    OH.append("0000000000001001")
+    CY.append("1001000000000000")
+    CL.append("0000101000001001")
 
     # Be warned patterns < 16 steps can sound disjointed when using CV to select the pattern!
 
