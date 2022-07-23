@@ -226,7 +226,7 @@ class Consequencer(EuroPiScript):
             cv6.off()
         
     def getParams(self):
-        val = ain.percent() #invert potentiometer value, might be different for OG Europi
+        val = 1-ain.percent() #invert potentiometer value, might be different for OG Europi
         extra_random = 0
         extra_fill = 0
         self.extra_pattern = 0
