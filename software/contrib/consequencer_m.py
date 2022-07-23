@@ -114,8 +114,6 @@ class Consequencer(EuroPiScript):
                 self.pattern = (self.base_pattern + self.extra_pattern)%len(self.BD)
                 self.step_length = len(self.BD[self.pattern])
             
-            
-            
         # - Short Press  (<300ms)  : Previous Drum pattern
         # - Medium Press (>300ms)  : Cycles through clock divisors (1/1, 1/2, 1/4)
         # - Long Press   (>2000ms) : ???
@@ -190,16 +188,12 @@ class Consequencer(EuroPiScript):
             cv4.off()
             cv5.off()
             cv6.off()
-
-
         
     def getParams(self):
-
         val = 1-ain.percent() #invert potentiometer value, might be different for OG Europi
         extra_random = 0
         extra_fill = 0
-        
-    
+            
         if self.analogInputMode == 0: #Random
             extra_random = int(val*100) # 0-100
             
@@ -211,20 +205,14 @@ class Consequencer(EuroPiScript):
 
             self.pattern = (self.base_pattern + self.extra_pattern)%len(self.BD)
             self.step_length = len(self.BD[self.pattern])
-
-            
-        #TOCHECK:
+    
         self.randomness = min(k1.read_position() + extra_random,99)
 
         nfill = k2.read_position(self.step_length+1) + extra_fill
         if nfill < 1: nfill = 1
         elif nfill > self.step_length: nfill = self.step_length
 
-
         self.fill = eucledian_rhythm(self.step_length,nfill)
-
-
-
 
     def main(self):
         while True:
@@ -260,13 +248,9 @@ class Consequencer(EuroPiScript):
         for i in range(2):
             oled.pixel(x+i+2,2,color)
 
-
-
-    
     def displayPattern(self):
-                # Show selected pattern visually
+        # Show selected pattern visually
         spacing = 3
-        col_size = int(OLED_WIDTH / 16)
         oled.text(self.visualizePattern(self.BD[self.pattern]), 0, spacing*0, 1)
         oled.text(self.visualizePattern(self.SN[self.pattern]), 0, spacing*1, 1)
         oled.text(self.visualizePattern(self.HH[self.pattern]), 0, spacing*2, 1)
@@ -274,9 +258,6 @@ class Consequencer(EuroPiScript):
         oled.text(self.visualizePattern(self.CY[self.pattern]), 0, spacing*4, 1)
         oled.text(self.visualizePattern(self.CL[self.pattern]), 0, spacing*5, 1)
         
-        # oled.fill_rect((self.step-1)*col_size, 0, col_size, OLED_HEIGHT-18, 1)
-            
-        # oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
         oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
         
     def updateScreen(self):
@@ -285,20 +266,20 @@ class Consequencer(EuroPiScript):
         self.displayPattern()
         self.downarrow(self.step-1)
         
-        
         bottom_spacing = 8
         #' R99 F16 P42 &4 '       
         oled.fill_rect(self.analogInputMode*32+8, OLED_HEIGHT-bottom_spacing-1, 24, bottom_spacing, 1)
-
-        oled.text(str(int(self.rand_fill_mode))+str(self.CLOCK_DIVISORS[self.clock_divisor]), 8*13, OLED_HEIGHT-bottom_spacing, 1)
 
         oled.text('R' + str(int(self.randomness)), 8*1, OLED_HEIGHT-bottom_spacing, self.analogInputMode !=0) #randomness analogInputMode = 0
         oled.text('F' + str(sum(self.fill)), 8*5, OLED_HEIGHT-bottom_spacing, self.analogInputMode != 1)       #fill analogInputMode =1
         oled.text('P' + str(self.pattern), 8*9, OLED_HEIGHT-bottom_spacing, self.analogInputMode != 2)         #pattern analogInputMode =2
 
+        if self.rand_fill_mode == 0:
+            oled.text('A', 8*13, OLED_HEIGHT-bottom_spacing, True)
+        else:
+            oled.text('B', 8*13, OLED_HEIGHT-bottom_spacing, True)
         
-        
-
+        oled.text(str(self.CLOCK_DIVISORS[self.clock_divisor]), 8*14, OLED_HEIGHT-bottom_spacing, 1)
         oled.show()
     
     def visualizeTrack(self, track):
@@ -312,7 +293,6 @@ class Consequencer(EuroPiScript):
         return t
 
 class pattern:
-
     # Initialize pattern lists
     BD=[]
     SN=[]
