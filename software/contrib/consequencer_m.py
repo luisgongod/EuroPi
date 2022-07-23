@@ -156,21 +156,23 @@ class Consequencer(EuroPiScript):
                 cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step])                                        
 
             else: # randomness > 0
+
                 if self.rand_fill_mode == 0: # Random over Fill
-                    cv1.value(randint(0, 1))
-                    cv2.value(randint(0, 1))
-                    cv3.value(randint(0, 1))
-                    cv4.value(randint(0, 1))
-                    cv5.value(randint(0, 1))
-                    cv6.value(randint(0, 1))
+                    
+                    cv1.value(int(randint(0,99)<self.randomness))
+                    cv2.value(int(randint(0,99)<self.randomness))
+                    cv3.value(int(randint(0,99)<self.randomness))
+                    cv4.value(int(randint(0,99)<self.randomness))
+                    cv5.value(int(randint(0,99)<self.randomness))
+                    cv6.value(int(randint(0,99)<self.randomness))
     
                 else:# Random && Fill                     
-                    cv1.value(int(self.BD[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))
-                    cv2.value(int(self.SN[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))                    
-                    cv3.value(int(self.HH[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))
-                    cv4.value(int(self.OH[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))                    
-                    cv5.value(int(self.CY[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))                    
-                    cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step]*randint(0, 1))                                        
+                    cv1.value(int(self.BD[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
+                    cv2.value(int(self.SN[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
+                    cv3.value(int(self.HH[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
+                    cv4.value(int(self.OH[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
+                    cv5.value(int(self.CY[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
+                    cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
              
             # Incremenent the clock step
             self.clock_step +=1
@@ -278,23 +280,8 @@ class Consequencer(EuroPiScript):
         oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
         
     def updateScreen(self):
-        # oled.clear() - dont use this, it causes the screen to flicker!
-        oled.fill(0)
- 
-        # Show selected pattern visually
-        # spacing = 7
-        # col_size = int(OLED_WIDTH / 16)
-        # oled.text(self.visualizePattern(self.BD[self.pattern]), 0, spacing*0, 1)
-        # oled.text(self.visualizePattern(self.SN[self.pattern]), 0, spacing*1, 1)
-        # oled.text(self.visualizePattern(self.HH[self.pattern]), 0, spacing*2, 1)
-        # oled.text(self.visualizePattern(self.OH[self.pattern]), 0, spacing*3, 1)
-        # oled.text(self.visualizePattern(self.CY[self.pattern]), 0, spacing*4, 1)
-        # oled.text(self.visualizePattern(self.CL[self.pattern]), 0, spacing*5, 1)
         
-        # oled.rect((self.step-1)*col_size, 0, col_size, OLED_HEIGHT-18, 1)
-            
-        # oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
-        # oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
+        oled.fill(0) 
         self.displayPattern()
         self.downarrow(self.step-1)
         
