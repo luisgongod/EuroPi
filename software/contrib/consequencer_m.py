@@ -1,4 +1,4 @@
-from europi_m import *
+from europi import *
 import machine
 from time import ticks_diff, ticks_ms
 from random import randint, uniform
@@ -6,9 +6,9 @@ from europi_script import EuroPiScript
 from bjorklund import bjorklund as eucledian_rhythm
 
 '''
-Consequencer_m
+GriDos
 author: Luis G (github.com/luisgongod)
-date: 
+date: 23/05/2020
 labels: sequencer, triggers, drums, randomness
 
 A gate sequencer that builds on Nik Ansell's Consequencer. 
@@ -20,26 +20,25 @@ CONTROLS:
 knob_1: Randomness
 knob_2: Fill, based on euclediaan rhythms
 
-
 digital_in: clock in
 analog_in: CV for Randomness, Fill or Pattern
 
 button_1: 
 - Short Press  (<300ms)  : Previous Drum pattern
 - Medium Press (>300ms)  : Cycles through clock divisors (1/1, 1/2, 1/4)
-- Long Press  (>2000ms)  : ???
+- Long Press  (>2000ms)  : ??? TBD
 
 button_2:
 - Short Press  (<300ms)  : Next Drum pattern
 - Medium Press (>300ms)  : Cycles what AIN can CV, (randomness -> fill -> Pattern -> randomness)
 - Long Press   (>2000ms) : Toggle option for Random/Fill behaviour mode, 
-    &: Random applies only to Filled steps
-    |: Random applies to all steps if > 0
+    &: Randomness will change if a fill-step will be trigger
+    |: Randomness will change in a fill-step if Patterns are triggered
 
 output_1: trigger 1 / Bass Drum
 output_2: trigger 2 / Snare Drum
 output_3: trigger 3 / Hi-Hat
-output_4: trigger 4 / Closed-Hat
+output_4: trigger 4 / Closed-Hat 
 output_5: trigger 5 / Cymmbal
 output_6: trigger 6 / Clap
 
@@ -49,9 +48,6 @@ class Consequencer(EuroPiScript):
     def __init__(self):
         # Overclock the Pico for improved performance.
         machine.freq(250_000_000)
-
-        ###################################################### M exclusive:
-        mk1._set_channel()
 
         # Initialize sequencer pattern arrays   
         p = pattern()     
