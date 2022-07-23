@@ -114,8 +114,6 @@ class Consequencer(EuroPiScript):
                 self.pattern = (self.base_pattern + self.extra_pattern)%len(self.BD)
                 self.step_length = len(self.BD[self.pattern])
             
-            
-            
         # - Short Press  (<300ms)  : Previous Drum pattern
         # - Medium Press (>300ms)  : Cycles through clock divisors (1/1, 1/2, 1/4)
         # - Long Press   (>2000ms) : ???
@@ -232,12 +230,10 @@ class Consequencer(EuroPiScript):
             cv6.off()
         
     def getParams(self):
-
         val = 1-ain.percent() #invert potentiometer value, might be different for OG Europi
         extra_random = 0
         extra_fill = 0
-        
-    
+            
         if self.analogInputMode == 0: #Random
             extra_random = int(val*50) # 0-50
             
@@ -257,7 +253,6 @@ class Consequencer(EuroPiScript):
         nfill = k2.read_position(self.step_length+1) + extra_fill
         if nfill < 1: nfill = 1
         elif nfill > self.step_length: nfill = self.step_length
-
 
         self.fill = eucledian_rhythm(self.step_length,nfill)
 
@@ -296,13 +291,9 @@ class Consequencer(EuroPiScript):
         for i in range(2):
             oled.pixel(x+i+2,2,color)
 
-
-
-    
     def displayPattern(self):
-                # Show selected pattern visually
+        # Show selected pattern visually
         spacing = 3
-        col_size = int(OLED_WIDTH / 16)
         oled.text(self.visualizePattern(self.BD[self.pattern]), 0, spacing*0, 1)
         oled.text(self.visualizePattern(self.SN[self.pattern]), 0, spacing*1, 1)
         oled.text(self.visualizePattern(self.HH[self.pattern]), 0, spacing*2, 1)
@@ -310,9 +301,6 @@ class Consequencer(EuroPiScript):
         oled.text(self.visualizePattern(self.CY[self.pattern]), 0, spacing*4, 1)
         oled.text(self.visualizePattern(self.CL[self.pattern]), 0, spacing*5, 1)
         
-        # oled.fill_rect((self.step-1)*col_size, 0, col_size, OLED_HEIGHT-18, 1)
-            
-        # oled.text("^", (self.step-1)*col_size, OLED_HEIGHT-18, 1)
         oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
         
     def updateScreen(self):
@@ -321,20 +309,20 @@ class Consequencer(EuroPiScript):
         self.displayPattern()
         self.downarrow(self.step-1)
         
-        
         bottom_spacing = 8
         #' R99 F16 P42 &4 '       
         oled.fill_rect(self.analogInputMode*32+8, OLED_HEIGHT-bottom_spacing-1, 24, bottom_spacing, 1)
-
-        oled.text(str(int(self.rand_fill_mode))+str(self.CLOCK_DIVISORS[self.clock_divisor]), 8*13, OLED_HEIGHT-bottom_spacing, 1)
 
         oled.text('R' + str(int(self.randomness)), 8*1, OLED_HEIGHT-bottom_spacing, self.analogInputMode !=0) #randomness analogInputMode = 0
         oled.text('F' + str(sum(self.fill)), 8*5, OLED_HEIGHT-bottom_spacing, self.analogInputMode != 1)       #fill analogInputMode =1
         oled.text('P' + str(self.pattern), 8*9, OLED_HEIGHT-bottom_spacing, self.analogInputMode != 2)         #pattern analogInputMode =2
 
+        if self.rand_fill_mode == 0:
+            oled.text('A', 8*13, OLED_HEIGHT-bottom_spacing, True)
+        else:
+            oled.text('B', 8*13, OLED_HEIGHT-bottom_spacing, True)
         
-        
-
+        oled.text(str(self.CLOCK_DIVISORS[self.clock_divisor]), 8*14, OLED_HEIGHT-bottom_spacing, 1)
         oled.show()
     
     def visualizeTrack(self, track):
@@ -348,7 +336,6 @@ class Consequencer(EuroPiScript):
         return t
 
 class pattern:
-
     # Initialize pattern lists
     BD=[]
     SN=[]
@@ -359,134 +346,237 @@ class pattern:
 
     # African Patterns
     #0
-    # BD.append("10110000001100001011000000110000")
-    # SN.append("10001000100010001010100001001010")
-    # HH.append("00001011000010110000101100001011") 
+    BD.append("10110000001100001011000000110000")
+    SN.append("10001000100010001010100001001010")
+    HH.append("00001011000010110000101100001011") 
+    OH.append("00010000010000000001010000000000")
+    CY.append("01000100000001010100000100001010")
+    CL.append("00000010010000010000000000100000")
 
     # BD.append("10101010101010101010101010101010")
     # SN.append("00001000000010000000100000001001")
     # HH.append("10100010101000101010001010100000")
+    # OH.append("00000000000000000000000000000000")
+    # CY.append("00000000000000000000000000000000")
+    # CL.append("00000000000000000000000000000000")    
 
     # BD.append("11000000101000001100000010100000")
     # SN.append("00001000000010000000100000001010")
     # HH.append("10111001101110011011100110111001")
+    # OH.append("00000000000000000000000000000000")
+    # CY.append("00000000000000000000000000000000")
+    # CL.append("00000000000000000000000000000000")
 
     # BD.append("10001000100010001000100010001010")
     # SN.append("00100100101100000010010010110010")
     # HH.append("10101010101010101010101010101011")
+    # OH.append("00000000000000000000000000000000")
+    # CY.append("00000000000000000000000000000000")
+    # CL.append("00000000000000000000000000000000")
 
     # BD.append("00101011101000111010001110100010")
     # SN.append("00101011101000111010001110100010")
     # HH.append("00001000000010000000100000001000")
+    # OH.append("00000000000000000000000000000000")
+    # CY.append("00000000000000000000000000000000")
+    # CL.append("00000000000000000000000000000000")
 
     # BD.append("10101111101000111010001110101000")
     # SN.append("10101111101000111010001110101000")
     # HH.append("00000000101000001010000010100010")
+    # OH.append("00000000000000000000000000000000")
+    # CY.append("00000000000000000000000000000000")
+    # CL.append("00000000000000000000000000000000")
 
     # BD.append("10110110000011111011011000001111")
     # SN.append("10110110000011111011011000001111")
     # HH.append("11111010001011111010001110101100")
+    # OH.append("00000000000000000000000000000000")
+    # CY.append("00000000000000000000000000000000")
+    # CL.append("00000000000000000000000000000000")
 
     # BD.append("10010100100101001001010010010100")
     # SN.append("00100010001000100010001000100010")
     # HH.append("01010101010101010101010101010101")
+    # OH.append("00000000000000000000000000000000")
+    # CY.append("00000000000000000000000000000000")
+    # CL.append("00000000000000000000000000000000")
 
     # 0,1,1,2,3,5,8,12
     #9
     # BD.append("0101011011101111")
     # SN.append("1010100100010000")
     # HH.append("1110100100010000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
+
 
     # Add patterns
     # BD.append("1000100010001000")
     # SN.append("0000000000000000")
     # HH.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000000000000000")
     # HH.append("0010010010010010")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000100000000000")
     # HH.append("0010010010010010")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000100000001000")
     # HH.append("0010010010010010")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000100000000000")
     # HH.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000100000001000")
     # HH.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000100000001000")
     # HH.append("0000100010001001")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000100000001000")
     # HH.append("0101010101010101")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000000000000000")
     # HH.append("1111111111111111")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000100000001000")
     # HH.append("1111111111111111")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000100000000000")
     # HH.append("0001000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # BD.append("1000100010001000")
     # SN.append("0000100000000000")
     # HH.append("0001001000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # Source: https://docs.google.com/spreadsheets/d/19_3BxUMy3uy1Gb0V8Wc-TcG7q16Amfn6e8QVw4-HuD0/edit#gid=0
     #22
+    ## Billie Jean
     # BD.append("1000000010000000")
     # SN.append("0000100000001000")
     # HH.append("1010101010101010")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
+    ## The Funky Drummer
     # BD.append("1010001000100100")
     # SN.append("0000100101011001")
-    # HH.append("0000000100000100")
+    # HH.append("1111111011111011")
+    # OH.append("0000000100000100")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
+    ##impeach the president
     # BD.append("1000000110000010")
     # SN.append("0000100000001000")
     # HH.append("1010101110001010")
+    # OH.append("0000000000100000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
+    ## When The Levee Breaks
     # BD.append("1100000100110000")
     # SN.append("0000100000001000")
     # HH.append("1010101010101010")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
+    ## Walk this way
     # BD.append("1000000110100000")
     # SN.append("0000100000001000")
     # HH.append("0010101010101010")
+    # OH.append("1000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
+    ## It's a new day
     # BD.append("1010000000110001")
     # SN.append("0000100000001000")
     # HH.append("1010101010101010")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
+    # #Papa was Too
     # BD.append("1000000110100001")
     # SN.append("0000100000001000")
     # HH.append("0000100010101011")
+    # OH.append("0000100000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
+    ## The big beat
     # BD.append("1001001010000000")
     # SN.append("0000100000001000")
-    # HH.append("0000100000001000")
+    # HH.append("0000000000000000")
+    # OH.append("0000000000000000")
+    # CY.append("0000000000000000")
+    # CL.append("0000100000001000")
 
+    ##Ashley's Roachclip															
     # BD.append("1010001001100000")
     # SN.append("0000100000001000")
     # HH.append("1010101010001010")
+    # OH.append("0000000000100000")
+    # CY.append("1010101010101010")
+    # CL.append("0000000000000000")
 
     # BD.append("1010000101110001")
     # SN.append("0000100000001000")
     # HH.append("1010101010001010")
+    # OH.append("0000000000100000")
+    # CY.append("0000000000000000")
+    # CL.append("0000000000000000")
 
     # End external patterns
     #32
@@ -574,13 +664,6 @@ class pattern:
     # HH.append("111")
 
     #49 extras:
-    BD.append("1000")
-    SN.append("0100")
-    HH.append("0010")
-    OH.append("0001")
-    CY.append("0000")
-    CL.append("0100")
-    
 
     BD.append("1000100010010010")
     SN.append("0100010001000100")
