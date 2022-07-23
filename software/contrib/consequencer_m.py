@@ -230,12 +230,13 @@ class Consequencer(EuroPiScript):
             cv6.off()
         
     def getParams(self):
-        val = 1-ain.percent() #invert potentiometer value, might be different for OG Europi
+        val = ain.percent() #invert potentiometer value, might be different for OG Europi
         extra_random = 0
         extra_fill = 0
+        self.extra_pattern = 0
             
         if self.analogInputMode == 0: #Random
-            extra_random = int(val*50) # 0-50
+            extra_random = int(val*50) # 0-50            
             
         elif self.analogInputMode == 1: #Fill
             extra_fill = round(val*self.step_length) # 0 to step_length-1
@@ -247,8 +248,7 @@ class Consequencer(EuroPiScript):
             self.step_length = len(self.BD[self.pattern])
 
             
-        #TOCHECK:
-        self.randomness = min(k1.read_position(steps=50) + extra_random,50)
+        self.randomness = min(k1.read_position(steps=51) + extra_random,50)
 
         nfill = k2.read_position(self.step_length+1) + extra_fill
         if nfill < 1: nfill = 1
@@ -273,6 +273,14 @@ class Consequencer(EuroPiScript):
         return self.t
     
     def visualizeFill(self, fillpattern):
+
+        for i in range(len(fillpattern)):
+            oled.pixel((8*i)+2,0,fillpattern[i])
+            oled.pixel((8*i)+3,0,fillpattern[i])
+            oled.pixel((8*i)+4,0,fillpattern[i])
+            oled.pixel((8*i)+5,0,fillpattern[i])       
+
+
         filltext = ''
         for i in range(0, len(fillpattern)):
             if fillpattern[i] == 1:
@@ -301,7 +309,7 @@ class Consequencer(EuroPiScript):
         oled.text(self.visualizePattern(self.CY[self.pattern]), 0, spacing*4, 1)
         oled.text(self.visualizePattern(self.CL[self.pattern]), 0, spacing*5, 1)
         
-        oled.text(self.visualizeFill(self.fill), 0, OLED_HEIGHT-18, 1)
+        self.visualizeFill(self.fill)
         
     def updateScreen(self):
         
@@ -309,20 +317,20 @@ class Consequencer(EuroPiScript):
         self.displayPattern()
         self.downarrow(self.step-1)
         
-        bottom_spacing = 8
+        
         #' R99 F16 P42 &4 '       
-        oled.fill_rect(self.analogInputMode*32+8, OLED_HEIGHT-bottom_spacing-1, 24, bottom_spacing, 1)
+        oled.fill_rect(self.analogInputMode*32+8, 23, 24, 8, 1)
 
-        oled.text('R' + str(int(self.randomness)), 8*1, OLED_HEIGHT-bottom_spacing, self.analogInputMode !=0) #randomness analogInputMode = 0
-        oled.text('F' + str(sum(self.fill)), 8*5, OLED_HEIGHT-bottom_spacing, self.analogInputMode != 1)       #fill analogInputMode =1
-        oled.text('P' + str(self.pattern), 8*9, OLED_HEIGHT-bottom_spacing, self.analogInputMode != 2)         #pattern analogInputMode =2
+        oled.text('R' + str(int(self.randomness)), 8*1, 24, self.analogInputMode !=0) #randomness analogInputMode = 0
+        oled.text('F' + str(sum(self.fill)), 8*5, 24, self.analogInputMode != 1)       #fill analogInputMode =1
+        oled.text('P' + str(self.pattern), 8*9, 24, self.analogInputMode != 2)         #pattern analogInputMode =2
 
         if self.rand_fill_mode == 0:
-            oled.text('A', 8*13, OLED_HEIGHT-bottom_spacing, True)
+            oled.text('A', 8*13, 24, True)
         else:
-            oled.text('B', 8*13, OLED_HEIGHT-bottom_spacing, True)
+            oled.text('B', 8*13, 24, True)
         
-        oled.text(str(self.CLOCK_DIVISORS[self.clock_divisor]), 8*14, OLED_HEIGHT-bottom_spacing, 1)
+        oled.text(str(self.CLOCK_DIVISORS[self.clock_divisor]), 8*14, 24, 1)
         oled.show()
     
     def visualizeTrack(self, track):
@@ -344,14 +352,15 @@ class pattern:
     CY=[]
     CL=[]
 
+    # Patterns above 16 steps are tracked but only first 16 are displayed
     # African Patterns
     #0
-    BD.append("10110000001100001011000000110000")
-    SN.append("10001000100010001010100001001010")
-    HH.append("00001011000010110000101100001011") 
-    OH.append("00010000010000000001010000000000")
-    CY.append("01000100000001010100000100001010")
-    CL.append("00000010010000010000000000100000")
+    # BD.append("10110000001100001011000000110000")
+    # SN.append("10001000100010001010100001001010")
+    # HH.append("00001011000010110000101100001011") 
+    # OH.append("00010000010000000001010000000000")
+    # CY.append("01000100000001010100000100001010")
+    # CL.append("00000010010000010000000000100000")
 
     # BD.append("10101010101010101010101010101010")
     # SN.append("00001000000010000000100000001001")
