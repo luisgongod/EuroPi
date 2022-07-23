@@ -145,35 +145,75 @@ class Consequencer(EuroPiScript):
             
             # A pattern was selected which is shorter than the current step. Set to zero to avoid an error
             if self.step >= self.step_length:
-                self.step = 0             
+                self.step = 0
 
-            if self.randomness == 0:
-                cv1.value(int(self.BD[self.pattern][self.step])*self.fill[self.step])
-                cv2.value(int(self.SN[self.pattern][self.step])*self.fill[self.step])                    
-                cv3.value(int(self.HH[self.pattern][self.step])*self.fill[self.step])
-                cv4.value(int(self.OH[self.pattern][self.step])*self.fill[self.step])                    
-                cv5.value(int(self.CY[self.pattern][self.step])*self.fill[self.step])                    
-                cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step])                                        
 
-            else: # randomness > 0
 
-                if self.rand_fill_mode == 0: # Random over Fill
+            if self.rand_fill_mode == 0:            
+            # Randomness will change if a full step will be trigger
+            # Filled Steps will have a probability of triggering based on the randomness value from 50 to 100%
+            # Non-filled steps will have a probability of triggering based on the randomness value from 50 to 0%
+            # At randomness == 0, Filled-steps will always trigger, and non-filled steps will never trigge (if there is a pattern)   
+            # at randomness == 25, Filled-pattern will have a 75% chance of triggering, Non-filled will have a 25%
+            # at randomness == 50, trigger will happen at 50% of any Pattern
+                if self.fill[self.step] == 1:
+                    cv1.value(int(self.BD[self.pattern][self.step])*int(randint(0,99)>self.randomness))
+                    cv2.value(int(self.SN[self.pattern][self.step])*int(randint(0,99)>self.randomness))
+                    cv3.value(int(self.HH[self.pattern][self.step])*int(randint(0,99)>self.randomness))
+                    cv4.value(int(self.OH[self.pattern][self.step])*int(randint(0,99)>self.randomness))
+                    cv5.value(int(self.CY[self.pattern][self.step])*int(randint(0,99)>self.randomness))
+                    cv6.value(int(self.CL[self.pattern][self.step])*int(randint(0,99)>self.randomness))
+                else:
+                    cv1.value(int(self.BD[self.pattern][self.step])*int(randint(0,99)<self.randomness))
+                    cv2.value(int(self.SN[self.pattern][self.step])*int(randint(0,99)<self.randomness))
+                    cv3.value(int(self.HH[self.pattern][self.step])*int(randint(0,99)<self.randomness))
+                    cv4.value(int(self.OH[self.pattern][self.step])*int(randint(0,99)<self.randomness))
+                    cv5.value(int(self.CY[self.pattern][self.step])*int(randint(0,99)<self.randomness))
+                    cv6.value(int(self.CL[self.pattern][self.step])*int(randint(0,99)<self.randomness))
+            
+            elif self.rand_fill_mode == 1:
+            #Randomness will change the probability of a pattern and filled step 
+            # Non-filled steps will never be triggered
+            # at Filled-steps:
+            # At randomness == 0, only patterns will trigger
+            # at randomness == 25, Pattern will have a 75% chance of triggering, non patterns 25%
+            # at randomness == 50, Pattern will have a 50% chance of triggering, non patterns 50%
+            
+                if self.fill[self.step] == 1:
+                    if int(self.BD[self.pattern][self.step]) == 1:
+                        cv1.value(int(randint(0,99)>self.randomness))
+                    else:
+                        cv1.value(int(randint(0,99)<self.randomness))
                     
-                    cv1.value(int(randint(0,99)<self.randomness))
-                    cv2.value(int(randint(0,99)<self.randomness))
-                    cv3.value(int(randint(0,99)<self.randomness))
-                    cv4.value(int(randint(0,99)<self.randomness))
-                    cv5.value(int(randint(0,99)<self.randomness))
-                    cv6.value(int(randint(0,99)<self.randomness))
-    
-                else:# Random && Fill                     
-                    cv1.value(int(self.BD[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
-                    cv2.value(int(self.SN[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
-                    cv3.value(int(self.HH[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
-                    cv4.value(int(self.OH[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
-                    cv5.value(int(self.CY[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
-                    cv6.value(int(self.CL[self.pattern][self.step])*self.fill[self.step]*int(randint(0,99)<self.randomness))
-             
+                    if int(self.SN[self.pattern][self.step]) == 1:
+                        cv2.value(int(randint(0,99)>self.randomness))
+                    else:
+                        cv2.value(int(randint(0,99)<self.randomness))
+
+                    if int(self.HH[self.pattern][self.step]) == 1:
+                        cv3.value(int(randint(0,99)>self.randomness))
+                    else:
+                        cv3.value(int(randint(0,99)<self.randomness))
+
+                    if int(self.OH[self.pattern][self.step]) == 1:
+                        cv4.value(int(randint(0,99)>self.randomness))
+                    else:
+                        cv4.value(int(randint(0,99)<self.randomness))
+
+                    if int(self.CY[self.pattern][self.step]) == 1:
+                        cv5.value(int(randint(0,99)>self.randomness))
+                    else:
+                        cv5.value(int(randint(0,99)<self.randomness))
+
+                    if int(self.CL[self.pattern][self.step]) == 1:
+                        cv6.value(int(randint(0,99)>self.randomness))
+                    else:
+                        cv6.value(int(randint(0,99)<self.randomness))
+
+
+
+
+                
             # Incremenent the clock step
             self.clock_step +=1
             self.step += 1
@@ -190,8 +230,6 @@ class Consequencer(EuroPiScript):
             cv4.off()
             cv5.off()
             cv6.off()
-
-
         
     def getParams(self):
 
@@ -201,7 +239,7 @@ class Consequencer(EuroPiScript):
         
     
         if self.analogInputMode == 0: #Random
-            extra_random = int(val*100) # 0-100
+            extra_random = int(val*50) # 0-50
             
         elif self.analogInputMode == 1: #Fill
             extra_fill = round(val*self.step_length) # 0 to step_length-1
@@ -214,7 +252,7 @@ class Consequencer(EuroPiScript):
 
             
         #TOCHECK:
-        self.randomness = min(k1.read_position() + extra_random,99)
+        self.randomness = min(k1.read_position(steps=50) + extra_random,50)
 
         nfill = k2.read_position(self.step_length+1) + extra_fill
         if nfill < 1: nfill = 1
@@ -222,8 +260,6 @@ class Consequencer(EuroPiScript):
 
 
         self.fill = eucledian_rhythm(self.step_length,nfill)
-
-
 
 
     def main(self):
